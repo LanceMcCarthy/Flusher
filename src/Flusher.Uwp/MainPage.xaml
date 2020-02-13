@@ -1,0 +1,258 @@
+﻿<Page x:Class="Flusher.Uwp.MainPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:local="using:Flusher.Uwp"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:converters="using:Flusher.Uwp.Converters"
+      xmlns:viewModels="using:Flusher.Uwp.ViewModels"
+      xmlns:input="using:Telerik.UI.Xaml.Controls.Input"
+      xmlns:chart="using:Telerik.UI.Xaml.Controls.Chart"
+      xmlns:dataVisualization="using:Telerik.UI.Xaml.Controls.DataVisualization"
+      xmlns:primitives="using:Telerik.UI.Xaml.Controls.Primitives"
+      mc:Ignorable="d"
+      Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Page.DataContext>
+        <viewModels:MainPageViewModel x:Name="ViewModel" />
+    </Page.DataContext>
+
+    <Page.Resources>
+        <converters:InvertBooleanConverter x:Key="InvertBooleanConv" />
+        <converters:PulseWidthDisplayConverter x:Key="PulseWidthDisplayConv" />
+        <converters:AngleDisplayConverter x:Key="AngleDisplayConv" />
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConv" />
+    </Page.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="4*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Background="{ThemeResource AppBarBackgroundThemeBrush}" BorderBrush="{ThemeResource SystemControlForegroundAccentBrush}" BorderThickness="0,0,0,2" Grid.ColumnSpan="2">
+            <TextBlock Text="Flusher Control Center"
+                       HorizontalAlignment="Center"
+                       Style="{ThemeResource TitleTextBlockStyle}"
+                       Margin="0,0,0,0" />
+        </Border>
+
+        <Grid x:Name="StatusGrid" Grid.Row="1" Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid x:Name="ImageGrid">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Grid Background="{ThemeResource ButtonBackgroundThemeBrush}"
+                      Grid.Column="0">
+                    <Image Source="{Binding LastImage}"
+                           VerticalAlignment="Stretch" />
+
+                    <Border Background="#AA000000"
+                            VerticalAlignment="Bottom">
+                        <TextBlock Text="{Binding OutputText, FallbackValue='Placeholder text for what would be the last line of output text'}"
+                                   TextWrapping="Wrap"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   Margin="5" />
+                    </Border>
+                </Grid>
+
+                <Grid Grid.Column="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Current Servo Angle" 
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Margin="10,-50,10,0"
+                               Style="{ThemeResource SubtitleTextBlockStyle}"/>
+
+                    <dataVisualization:RadRadialGauge MinValue="0"
+                                                      MaxValue="100"
+                                                      MaxAngle="180"
+                                                      MinAngle="0"
+                                                      TickStep="2"
+                                                      LabelStep="10"
+                                                      Margin="10,10,10,0">
+                        <dataVisualization:RadRadialGauge.Indicators>
+                            <dataVisualization:ArrowGaugeIndicator Brush="{ThemeResource SystemControlForegroundAccentBrush}"
+                                                                   Value="{Binding FlusherServo.DesiredAngle}"
+                                                                   IsAnimated="True" />
+                        </dataVisualization:RadRadialGauge.Indicators>
+                    </dataVisualization:RadRadialGauge>
+
+                    <Button Command="{Binding AnalyzeCommand}"
+                            IsEnabled="{Binding IsServerConnected}"
+                            Content="Analyze"
+                            HorizontalAlignment="Stretch"
+                            Margin="10"
+                            Grid.Row="1" />
+
+                    <Button Command="{Binding FlushRequestCommand}"
+                            IsEnabled="{Binding IsServerConnected}"
+                            Content="Manual Flush"
+                            HorizontalAlignment="Stretch"
+                            Margin="10"
+                            Grid.Row="2" />
+                </Grid>
+            </Grid>
+
+            <chart:RadCartesianChart x:Name="Chart"
+                                     Grid.Row="1">
+                <chart:RadCartesianChart.Series>
+                    <chart:SplineAreaSeries ItemsSource="{Binding AngleAdjustmentHistory}">
+                        <chart:SplineAreaSeries.VerticalAxis>
+                            <chart:LinearAxis Title="Angle"
+                                              LabelFormat="{}{0,0:N0} °"
+                                              LastLabelVisibility="Hidden"
+                                              HorizontalLocation="Left" />
+                        </chart:SplineAreaSeries.VerticalAxis>
+                        <chart:SplineAreaSeries.HorizontalAxis>
+                            <chart:DateTimeContinuousAxis Title="Timestamp"
+                                                          LabelFormat="{}{0,0:mm:ss}"
+                                                          LabelFitMode="Rotate"
+                                                          LastLabelVisibility="Hidden"
+                                                          VerticalLocation="Bottom" />
+                        </chart:SplineAreaSeries.HorizontalAxis>
+                        <chart:SplineAreaSeries.CategoryBinding>
+                            <chart:PropertyNameDataPointBinding PropertyName="Date" />
+                        </chart:SplineAreaSeries.CategoryBinding>
+                        <chart:SplineAreaSeries.ValueBinding>
+                            <chart:PropertyNameDataPointBinding PropertyName="Value" />
+                        </chart:SplineAreaSeries.ValueBinding>
+                    </chart:SplineAreaSeries>
+
+                    <chart:ScatterPointSeries ItemsSource="{Binding AngleAdjustmentHistory}">
+                        <chart:ScatterPointSeries.PointTemplate>
+                            <DataTemplate>
+                                <Ellipse Fill="OrangeRed"
+                                         Width="5"
+                                         Height="5" />
+                            </DataTemplate>
+                        </chart:ScatterPointSeries.PointTemplate>
+                        <chart:ScatterPointSeries.VerticalAxis>
+                            <chart:LinearAxis Title="Angle"
+                                              LabelFormat="{}{0,0:N0} °"
+                                              LastLabelVisibility="Hidden"
+                                              HorizontalLocation="Right" />
+                        </chart:ScatterPointSeries.VerticalAxis>
+                        <chart:ScatterPointSeries.HorizontalAxis>
+                            <chart:LinearAxis Title="Duty Cycle"
+                                              LabelFormat="{}{0,0:N0} μs"
+                                              MajorStep="5"
+                                              LabelFitMode="Rotate"
+                                              LastLabelVisibility="Hidden"
+                                              VerticalLocation="Top" />
+                        </chart:ScatterPointSeries.HorizontalAxis>
+                        <chart:ScatterPointSeries.XValueBinding>
+                            <chart:PropertyNameDataPointBinding PropertyName="XValue" />
+                        </chart:ScatterPointSeries.XValueBinding>
+                        <chart:ScatterPointSeries.YValueBinding>
+                            <chart:PropertyNameDataPointBinding PropertyName="YValue" />
+                        </chart:ScatterPointSeries.YValueBinding>
+                    </chart:ScatterPointSeries>
+                </chart:RadCartesianChart.Series>
+            </chart:RadCartesianChart>
+        </Grid>
+
+        <Grid x:Name="ServoControlPanelGrid"
+              Background="{ThemeResource AppBarBackgroundThemeBrush}"
+              RowSpacing="10"
+              Grid.Row="1"
+              Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Background="{ThemeResource ButtonBackgroundThemeBrush}"
+                        Padding="10"
+                        Spacing="10">
+                <TextBlock Text="Direct Servo Control"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+                           FontSize="18" />
+                <StackPanel Orientation="Horizontal"
+                            Spacing="10"
+                            HorizontalAlignment="Center">
+                    <TextBlock Text="Angle:"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding FlusherServo.DesiredAngle, Converter={StaticResource AngleDisplayConv}}"
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal"
+                            Spacing="10"
+                            HorizontalAlignment="Center">
+                    <TextBlock Text="Pulse Width (µs):"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding FlusherServo.DesiredPulseWidth, Converter={StaticResource PulseWidthDisplayConv}}"
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+            </StackPanel>
+
+            <Slider Minimum="{Binding MinimumAngle}"
+                    Maximum="{Binding MaximumAngle}"
+                    Value="{Binding FlusherServo.DesiredAngle, Mode=TwoWay}"
+                    Orientation="Vertical"
+                    TickFrequency="10"
+                    TickPlacement="Outside"
+                    LargeChange="10"
+                    SmallChange="1"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Stretch"
+                    Grid.Row="1" />
+
+            <StackPanel Grid.Row="2">
+                <CheckBox Content="Auto-update"
+                          MinWidth="60"
+                          HorizontalAlignment="Center"
+                          IsChecked="{Binding FlusherServo.AutoFollow, Mode=TwoWay}" />
+
+                <input:RadNumericBox Minimum="{Binding MinimumAngle}"
+                                     Maximum="{Binding MaximumAngle}"
+                                     Value="{Binding FlusherServo.DesiredAngle, Mode=TwoWay}"
+                                     IsEnabled="{Binding FlusherServo.AutoFollow, Converter={StaticResource InvertBooleanConv}}"
+                                     SmallChange="1"
+                                     LargeChange="10"
+                                     Watermark="Set angle"
+                                     MinWidth="166"
+                                     Margin="5,5,5,0"
+                                     HorizontalAlignment="Center" />
+
+                <Button Command="{Binding SetAngleCommand}"
+                        Content="Change Angle"
+                        IsEnabled="{Binding FlusherServo.AutoFollow, Converter={StaticResource InvertBooleanConv}}"
+                        HorizontalAlignment="Center"
+                        Margin="10"
+                        MinWidth="166" />
+            </StackPanel>
+        </Grid>
+
+        <primitives:RadBusyIndicator IsActive="{Binding IsBusy}"
+                                     Content="{Binding IsBusyMessage}"
+                                     Background="#AA000000"
+                                     Foreground="White"
+                                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConv}, FallbackValue=Collapsed}"
+                                     AnimationStyle="AnimationStyle7"
+                                     Grid.Column="0"
+                                     Grid.ColumnSpan="2" 
+                                     Grid.Row="0"
+                                     Grid.RowSpan="2"/>
+    </Grid>
+</Page>

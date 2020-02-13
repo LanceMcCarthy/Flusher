@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:Flusher.Forms.ViewModels;assembly=Flusher.Forms"
+             xmlns:primitives="clr-namespace:Telerik.XamarinForms.Primitives;assembly=Telerik.XamarinForms.Primitives"
+             xmlns:system="clr-namespace:System;assembly=netstandard"
+             xmlns:input="clr-namespace:Telerik.XamarinForms.Input;assembly=Telerik.XamarinForms.Input"
+             mc:Ignorable="d"
+             x:Class="Flusher.Forms.Views.AboutPage">
+
+    <d:ContentPage.BindingContext>
+        <viewModels:AboutPageViewModel />
+    </d:ContentPage.BindingContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid HeightRequest="{OnPlatform Android='180', iOS='180', UWP='151.5'}"
+              BackgroundColor="{StaticResource DarkBlueThemeColor}"
+              Padding="10">
+            <primitives:RadBorder BorderColor="{StaticResource LightForegroundThemeColor}"
+                                  BackgroundColor="{StaticResource LightForegroundThemeColor}"
+                                  VerticalOptions="Center"
+                                  HorizontalOptions="Center"
+                                  HeightRequest="160"
+                                  WidthRequest="160"
+                                  Margin="10"
+                                  BorderThickness="2"
+                                  CornerRadius="90" />
+            <Image x:Name="TitleBarImage"
+                   Source="flusher_wide.png"
+                   HeightRequest="125"
+                   WidthRequest="125"
+                   VerticalOptions="Center"
+                   HorizontalOptions="Center"
+                   Aspect="AspectFit">
+                <Image.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding OpenWebCommand}"
+                                          CommandParameter="WebPortal" />
+                </Image.GestureRecognizers>
+            </Image>
+        </Grid>
+
+        <StackLayout Padding="16,20,16,20"
+                     Grid.Row="1">
+            <Label Text="{Binding AppDescription}"
+                   TextColor="{StaticResource DarkBlueThemeColor}"
+                   LineBreakMode="WordWrap">
+                <Label.FontSize>
+                    <OnPlatform x:TypeArguments="system:Double">
+                        <On Platform="Android"
+                            Value="12" />
+                        <On Platform="iOS"
+                            Value="12" />
+                        <On Platform="UWP"
+                            Value="14" />
+                    </OnPlatform>
+                </Label.FontSize>
+                <Label.Margin>
+                    <OnPlatform x:TypeArguments="Thickness">
+                        <On Platform="Android"
+                            Value="0,0,0,10" />
+                        <On Platform="iOS"
+                            Value="0,0,0,20" />
+                        <On Platform="UWP"
+                            Value="0,0,0,40" />
+                    </OnPlatform>
+                </Label.Margin>
+            </Label>
+
+            <input:RadButton Text="Explore 3D Printing Models on Thingiverse →"
+                             Command="{Binding OpenWebCommand}"
+                             CommandParameter="Thingiverse"
+                             Style="{StaticResource UrlButtonStyle}" />
+
+            <input:RadButton Text="Explore Source Code on GitHub →"
+                             Command="{Binding OpenWebCommand}"
+                             CommandParameter="SourceCode"
+                             Style="{StaticResource UrlButtonStyle}" />
+
+            <input:RadButton Text="Use Web Portal Instead →"
+                             Command="{Binding OpenWebCommand}"
+                             CommandParameter="WebPortal"
+                             Style="{StaticResource UrlButtonStyle}" />
+
+        </StackLayout>
+    </Grid>
+</ContentPage>

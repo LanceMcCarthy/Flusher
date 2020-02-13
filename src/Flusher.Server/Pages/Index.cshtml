@@ -1,0 +1,259 @@
+﻿@page
+@using Flusher.Common.Models
+@using Kendo.Mvc.UI
+@model IndexModel
+@{
+    ViewData["Title"] = "Flusher Home";
+}
+
+<div class="container">
+    <div class="row">&nbsp;</div>
+
+    <div class="row mt-2">
+        <div class="col-3">
+            <input type="text" id="requesterInput" value="Generating, wait..." />
+        </div>
+
+        <div class="col-1">
+            @(Html.Kendo().Button()
+                .Name("requestAnalyzeButton")
+                .Enable(false)
+                .HtmlAttributes(new { type = "button", @class = "k-primary" })
+                .Content("Analyze"))
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <hr />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-3 mt-2">
+            @(Html.Kendo().Button()
+                .Name("requestPhotoButton")
+                .Enable(false)
+                .HtmlAttributes(new { type = "button" })
+                .Content("Photo Only"))
+        </div>
+        <div class="col-2 mt-2">
+            @(Html.Kendo().Button()
+                .Name("requestFlushButton")
+                .Enable(false)
+                .HtmlAttributes(new { type = "button" })
+                .Content("Flush"))
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-12 ">
+            <hr />
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <p id="status" class="col-12 status-text"></p>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div id="grid"></div>
+    </div>
+
+    <style>
+        img[src=""] {
+            display: none;
+        }
+        .service-photo {
+            display: inline-block;
+            width: 300px;
+            height: 240px;
+            vertical-align: middle;
+        }
+        .status-text {
+            text-align: left;
+        }
+    </style>
+</div>
+
+<div id="popup">
+    <img id="selectedItemImage" />
+    <h3 id="selectedItemMessage"></h3>
+</div>
+
+<script src="~/js/signalr/dist/browser/signalr.min.js"></script>
+
+<script type="text/javascript">
+    "use strict";
+
+    var connection = new signalR.HubConnectionBuilder().withUrl("/flusherHub").build();
+    var popup;
+
+    function updateStatus(message) {
+        document.getElementById("status").innerText = new Date().toLocaleString() + " : " + message;
+    }
+
+    function onRowChange(arg) {
+        var selectedItem = this.dataItem(this.select());
+
+        document.getElementById("selectedItemImage").src = selectedItem.imgUrl;
+        document.getElementById("selectedItemMessage").innerText = selectedItem.message;
+
+        // Open the Kendo Window with the selection's details.
+        if (popup) {
+            popup.title(selectedItem.timestamp);
+            popup.open();
+        }
+
+        console.log("Selected: " + selectedItem.message);
+    }
+
+    function requestFlushOnClick(e) {
+        var name = document.getElementById("requesterInput").value;
+        console.log("requestFlushClick");
+
+        connection.invoke("SendFlushRequest", name).catch(function (err) {
+            return console.error(err.toString());
+        });
+    }
+
+    function requestPhotoOnClick(e) {
+        var name = document.getElementById("requesterInput").value;
+        updateStatus("Photo requested by " + name + "...");
+        console.log("requestPhotoClick");
+
+        connection.invoke("SendPhotoRequest", name).catch(function (err) {
+            return console.error(err.toString());
+        });
+    }
+
+    function requestAnalyzeOnClick(e) {
+        var name = document.getElementById("requesterInput").value;
+        console.log("requestAnalyzeClick");
+
+        connection.invoke("SendAnalyzeRequest", name).catch(function (err) {
+            return console.error(err.toString());
+        });
+    }
+
+    function onReceiveMessage(message) {
+        var msg = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        updateStatus(msg);
+        console.log("Message Received: " + msg);
+    }
+
+    function onReceivePhotoResult(message, imageUrl) {
+        var msg = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        updateStatus("Photo received.");
+        console.log("Photo Received: " + msg + " - " + imageUrl);
+
+        $("#grid").data("kendoGrid").dataSource.add({
+            message: msg,
+            imgUrl: imageUrl,
+            timestamp: new Date().toLocaleString()
+        });
+    }
+
+    function onReceiveAnalyzeResult(message, imageUrl) {
+        var msg = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        updateStatus("Analyze complete.");
+        console.log("Analyze Result Received: " + message + " - " + imageUrl);
+
+        $("#grid").data("kendoGrid").dataSource.add({
+            message: msg,
+            imgUrl: imageUrl,
+            timestamp: new Date().toLocaleString()
+        });
+    }
+
+    function onHubConnectionStart() {
+        updateStatus("Generating username...");
+
+        // Get IP address to identify user
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'https://api.ipify.org');
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                document.getElementById("requesterInput").value = "Web UI (" + xhr.responseText + ")";
+            }
+            else {
+                document.getElementById("requesterInput").value = "Web UI (no IP)";
+                console.log('api.ipify.org Request failed.  Returned status of ' + xhr.status);
+            }
+        };
+        xhr.send();
+
+        $("#requestFlushButton").data("kendoButton").enable(true);
+        $("#requestPhotoButton").data("kendoButton").enable(true);
+        $("#requestAnalyzeButton").data("kendoButton").enable(true);
+
+        updateStatus("Ready.");
+    }
+
+    // doc ready
+    $(function () {
+        updateStatus("DOM ready, setting up Kendo controls...");
+
+        // Initialize Kendo buttons with click handlers
+        $("#requestFlushButton").kendoButton({
+            click: requestFlushOnClick
+        });
+
+        $("#requestPhotoButton").kendoButton({
+            click: requestPhotoOnClick
+        });
+
+        $("#requestAnalyzeButton").kendoButton({
+            click: requestAnalyzeOnClick
+        });
+
+        popup = $("#popup").kendoWindow({
+            title: "No Selected Item",
+            visible: false,
+            actions: [
+                "Pin",
+                "Minimize",
+                "Maximize",
+                "Close"
+            ]
+        }).data("kendoWindow").center();
+
+        $("#grid").kendoGrid({
+            groupable: true,
+            sortable: true,
+            selectable: "row",
+            change: onRowChange,
+            pageable: {
+                refresh: true,
+                pageSizes: true,
+                buttonCount: 5
+            },
+            columns: [{
+                    template: "<div><img src='#= imgUrl #' class='service-photo'/><p>#= message #</p></div>",
+                    field: "imgUrl",
+                    title: "Content",
+                    width: 300
+                },
+                {
+                    field: "timestamp",
+                    title: "Timestamp"
+                }
+            ]
+        });
+
+        updateStatus("Setting up SignalR...");
+
+        connection.on("@ActionNames.ReceiveMessageName", onReceiveMessage);
+        connection.on("@ActionNames.ReceivePhotoResultName", onReceivePhotoResult);
+        connection.on("@ActionNames.ReceiveAnalyzeResultName", onReceiveAnalyzeResult);
+
+        updateStatus("Starting SignalR connection...");
+
+        connection.start().then(onHubConnectionStart).catch(function (err) {
+                return console.error(err.toString());
+            }
+        );
+    });
+</script>

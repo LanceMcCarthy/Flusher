@@ -16,8 +16,8 @@ Introducing The Flusher, a Windows IoT on Raspberry Pi, SignalR and XamarinForms
   - Accessed via API
   - Offline inferencing capability via ONYX on Windows ML
 - Azure Storage (uses blob containers)
-- ASP.NET Core 3.1 (MVC and SignalR)
-- Xamarin.Forms for Android, iOS and PC desktop admin applications
+- [ASP.NET Core 3.1 (MVC and SignalR)](https://docs.microsoft.com/en-us/aspnet/core/signalr/introduction?view=aspnetcore-3.1)
+- [Xamarin.Forms](https://docs.microsoft.com/en-us/xamarin/xamarin-forms/) for Android, iOS and PC desktop admin applications
 
 ## Operation Details
 

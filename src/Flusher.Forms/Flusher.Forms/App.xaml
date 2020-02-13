@@ -1,0 +1,210 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Application xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:converters="clr-namespace:Flusher.Forms.Converters;assembly=Flusher.Forms"
+             xmlns:telerikInput="clr-namespace:Telerik.XamarinForms.Input;assembly=Telerik.XamarinForms.Input"
+             xmlns:primitives="clr-namespace:Telerik.XamarinForms.Primitives;assembly=Telerik.XamarinForms.Primitives"
+             xmlns:listView="clr-namespace:Telerik.XamarinForms.DataControls.ListView;assembly=Telerik.XamarinForms.DataControls"
+             xmlns:dataGrid="clr-namespace:Telerik.XamarinForms.DataGrid;assembly=Telerik.XamarinForms.DataGrid"
+             xmlns:chart="clr-namespace:Telerik.XamarinForms.Chart;assembly=Telerik.XamarinForms.Chart"
+             xmlns:input="clr-namespace:Telerik.XamarinForms.Input;assembly=Telerik.XamarinForms.Input"
+             xmlns:dataControls="clr-namespace:Telerik.XamarinForms.DataControls;assembly=Telerik.XamarinForms.DataControls"
+             xmlns:conversationalUi="clr-namespace:Telerik.XamarinForms.ConversationalUI;assembly=Telerik.XamarinForms.ConversationalUI"
+             xmlns:pdfViewer="clr-namespace:Telerik.XamarinForms.PdfViewer;assembly=Telerik.XamarinForms.PdfViewer"
+             xmlns:imageEditor="clr-namespace:Telerik.XamarinForms.ImageEditor;assembly=Telerik.XamarinForms.ImageEditor"
+             xmlns:styles="clr-namespace:Flusher.Forms.Styles;assembly=Flusher.Forms"
+             mc:Ignorable="d"
+             x:Class="Flusher.Forms.App">
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary MergedWith="styles:CustomTheme" />
+                <ResourceDictionary MergedWith="input:TelerikThemeStyles" />
+                <ResourceDictionary MergedWith="primitives:TelerikThemeStyles" />
+                <ResourceDictionary MergedWith="chart:TelerikThemeStyles" />
+                <ResourceDictionary MergedWith="dataControls:TelerikThemeStyles" />
+                <ResourceDictionary MergedWith="dataGrid:TelerikThemeStyles" />
+                <ResourceDictionary MergedWith="imageEditor:TelerikThemeStyles" />
+                <ResourceDictionary MergedWith="conversationalUi:TelerikThemeStyles" />
+                <ResourceDictionary MergedWith="pdfViewer:TelerikThemeStyles" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Theme Colors -->
+
+            <Color x:Key="DarkForegroundThemeColor">Black</Color>
+            <Color x:Key="HalfTransparentDarkForegroundThemeColor">#AA000000</Color>
+            <Color x:Key="LightForegroundThemeColor">White</Color>
+            <Color x:Key="HalfTransparentLightForegroundThemeColor">#CCFFFFFF</Color>
+            <Color x:Key="DarkBlueThemeColor">#3D609B</Color>
+            <Color x:Key="DarkGrayThemeColor">DarkSlateGray</Color>
+            <Color x:Key="DarkGreenThemeColor">SeaGreen</Color>
+            <Color x:Key="UnselectedThemeColor">#DDFFFFFF</Color>
+            <Color x:Key="DisabledThemeColor">#B4FFFFFF</Color>
+            <Color x:Key="LightGrayThemeColor">LightSlateGray</Color>
+
+            <!-- Converters and Selectors -->
+
+            <converters:InvertBoolConverter x:Key="InvertBoolConv" />
+            <converters:NullToBoolConverter x:Key="NullToBoolConv" />
+            <converters:NullToBoolConverter x:Key="InvertedNullToBoolConv"
+                                            IsInverted="True" />
+
+            <!--Styles-->
+
+            <Style x:Key="BaseButtonStyle"
+                   TargetType="{x:Type telerikInput:RadButton}">
+                <Setter Property="FontSize"
+                        Value="10" />
+                <Setter Property="FontAttributes"
+                        Value="Bold" />
+                <Setter Property="Padding"
+                        Value="12,0,0,0" />
+                <Setter Property="HeightRequest">
+                    <Setter.Value>
+                        <OnPlatform x:TypeArguments="x:Double">
+                            <OnPlatform.Platforms>
+                                <On Platform="iOS"
+                                    Value="28" />
+                                <On Platform="UWP, Android"
+                                    Value="32" />
+                            </OnPlatform.Platforms>
+                        </OnPlatform>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="BorderThickness"
+                        Value="0" />
+            </Style>
+
+            <Style x:Key="RoundButtonStyle"
+                   BasedOn="{StaticResource BaseButtonStyle}"
+                   TargetType="{x:Type telerikInput:RadButton}">
+                <Setter Property="TextColor"
+                        Value="{StaticResource LightForegroundThemeColor}" />
+                <Setter Property="BorderRadius">
+                    <Setter.Value>
+                        <OnPlatform x:TypeArguments="x:Int32">
+                            <OnPlatform.Platforms>
+                                <On Platform="iOS"
+                                    Value="9" />
+                                <On Platform="UWP, Android"
+                                    Value="10" />
+                            </OnPlatform.Platforms>
+                        </OnPlatform>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="BusyIndicatorStyle"
+                   TargetType="primitives:RadBusyIndicator">
+                <Setter Property="AnimationContentColor"
+                        Value="{StaticResource DarkBlueThemeColor}" />
+                <Setter Property="BackgroundColor"
+                        Value="{StaticResource HalfTransparentLightForegroundThemeColor}" />
+                <Setter Property="AnimationContentHeightRequest"
+                        Value="100" />
+                <Setter Property="AnimationContentWidthRequest"
+                        Value="100" />
+                <Setter Property="AnimationType"
+                        Value="Animation8" />
+                <Setter Property="HorizontalOptions"
+                        Value="FillAndExpand" />
+                <Setter Property="VerticalOptions"
+                        Value="FillAndExpand" />
+                <Setter Property="BusyContentTemplate">
+                    <Setter.Value>
+                        <ControlTemplate>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <ContentPresenter Content="{TemplateBinding Path=AnimationContent}"
+                                                  Grid.Row="1" />
+                                <ContentPresenter Content="{TemplateBinding Path=BusyContent}"
+                                                  Grid.Row="2" />
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="UrlButtonStyle"
+                   TargetType="input:RadButton">
+                <Setter Property="TextColor"
+                        Value="{StaticResource DarkBlueThemeColor}" />
+                <Setter Property="HorizontalOptions"
+                        Value="Center" />
+                <Setter Property="CornerRadius"
+                        Value="15" />
+                <Setter Property="BackgroundColor"
+                        Value="{StaticResource LightForegroundThemeColor}" />
+                <Setter Property="BorderThickness"
+                        Value="2" />
+                <Setter Property="BorderColor"
+                        Value="{StaticResource DarkBlueThemeColor}" />
+            </Style>
+
+            <!-- Data Templates -->
+
+            <DataTemplate x:Key="FullItemTemplate">
+                <listView:ListViewTemplateCell>
+                    <primitives:RadBorder BorderThickness="1,1,1,3"
+                                          BorderColor="{StaticResource DarkBlueThemeColor}"
+                                          Margin="10,5"
+                                          CornerRadius="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Image Source="{Binding ImageUrl}"
+                                   IsVisible="{Binding ImageUrl, Converter={StaticResource InvertedNullToBoolConv}}"
+                                   Aspect="AspectFill"
+                                   WidthRequest="100"
+                                   Grid.RowSpan="2" />
+
+                            <Label Text="{Binding Message}"
+                                   IsVisible="{Binding Message, Converter={StaticResource InvertedNullToBoolConv}}"
+                                   LineBreakMode="WordWrap"
+                                   Style="{DynamicResource ListItemDetailTextStyle}"
+                                   FontSize="16"
+                                   Grid.Row="0"
+                                   Grid.Column="1" />
+
+                            <StackLayout Orientation="Horizontal"
+                                         VerticalOptions="End"
+                                         HorizontalOptions="End"
+                                         Grid.Row="1"
+                                         Grid.Column="1"
+                                         Margin="5">
+                                <Label Text="{Binding Requester, StringFormat='by: {0}'}"
+                                       IsVisible="{Binding Requester, Converter={StaticResource InvertedNullToBoolConv}}"
+                                       LineBreakMode="NoWrap"
+                                       FontAttributes="Italic"
+                                       Style="{DynamicResource ListItemTextStyle}"
+                                       FontSize="Micro" />
+
+                                <Label Text="{Binding TimeStamp, StringFormat=' @ {0:g}'}"
+                                       IsVisible="{Binding TimeStamp, Converter={StaticResource InvertedNullToBoolConv}}"
+                                       LineBreakMode="WordWrap"
+                                       Style="{DynamicResource ListItemDetailTextStyle}"
+                                       FontSize="Micro"
+                                       FontAttributes="Italic" />
+                            </StackLayout>
+                        </Grid>
+                    </primitives:RadBorder>
+                </listView:ListViewTemplateCell>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
