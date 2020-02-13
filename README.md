@@ -2,6 +2,8 @@
 
 Introducing The Flusher, a Windows IoT on Raspberry Pi, SignalR and XamarinForms project that uses AI to automatically flush a human toilet for my cat while I'm on vacation :)
 
+![manual flush](/images/manual_flush.gif)
+
 ## Parts and Services
 
 * Windows IoT (17763) on Raspberry Pi 3 (B+)
