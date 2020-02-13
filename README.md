@@ -2,6 +2,8 @@
 
 Introducing The Flusher, a Windows IoT on Raspberry Pi, SignalR and XamarinForms project that uses AI to automatically flush a human toilet for my cat while I'm on vacation :)
 
+![manual flush](/images/manual_flush.gif)
+
 ## Parts and Services
 
 * Windows IoT (17763) on Raspberry Pi 3 (B+)
@@ -14,10 +16,10 @@ Introducing The Flusher, a Windows IoT on Raspberry Pi, SignalR and XamarinForms
 - [Azure Custom Vision](customvision.ai)
   - Custom trained with at least 4 iterations and 8 hours of training time
   - Accessed via API
-  - Offline inferencing capability via ONYX on Windows ML
-- Azure Storage (uses blob containers)
-- ASP.NET Core 3.1 (MVC and SignalR)
-- Xamarin.Forms for Android, iOS and PC desktop admin applications
+  - Offline inferencing capability via ONYX on Windows Machine Learning
+- [Azure Storage API](https://docs.microsoft.com/en-us/rest/api/storageservices/blob-service-rest-api) (uses blob containers)
+- [ASP.NET Core 3.1 (MVC and SignalR)](https://docs.microsoft.com/en-us/aspnet/core/signalr/introduction?view=aspnetcore-3.1)
+- [Xamarin.Forms](https://docs.microsoft.com/en-us/xamarin/xamarin-forms/) for Android, iOS and PC desktop admin applications
 
 ## Operation Details
 

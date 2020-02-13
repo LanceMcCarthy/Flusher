@@ -1,0 +1,224 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:primitives="clr-namespace:Telerik.XamarinForms.Primitives;assembly=Telerik.XamarinForms.Primitives"
+             xmlns:dataControls="clr-namespace:Telerik.XamarinForms.DataControls;assembly=Telerik.XamarinForms.DataControls"
+             xmlns:listView="clr-namespace:Telerik.XamarinForms.DataControls.ListView;assembly=Telerik.XamarinForms.DataControls"
+             xmlns:input="clr-namespace:Telerik.XamarinForms.Input;assembly=Telerik.XamarinForms.Input"
+             xmlns:system="clr-namespace:System;assembly=netstandard"
+             xmlns:viewModels="clr-namespace:Flusher.Forms.ViewModels;assembly=Flusher.Forms"
+             mc:Ignorable="d"
+             x:Class="Flusher.Forms.Views.OperationsPage"
+             Title="{Binding Title}">
+
+    <d:ContentPage.BindingContext>
+        <viewModels:OperationsViewModel/>
+    </d:ContentPage.BindingContext>
+
+    <Grid ColumnSpacing="0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <dataControls:RadListView ItemsSource="{Binding Operations}"
+                                  ItemTapped="ListView_OnItemTapped"
+                                  SelectionMode="None"
+                                  Grid.ColumnSpan="2"
+                                  Grid.Column="0"
+                                  Grid.Row="0"
+                                  Margin="5,5,5,0">
+            <dataControls:RadListView.ItemTemplate>
+                <DataTemplate>
+                    <listView:ListViewTemplateCell>
+                        <primitives:RadBorder BorderThickness="0"
+                                              CornerRadius="5">
+                            <Grid>
+                                <Image Source="{Binding ImageUrl}"
+                                       IsVisible="{Binding ImageUrl, Converter={StaticResource InvertedNullToBoolConv}}"
+                                       Aspect="AspectFill" />
+
+                                <primitives:RadBorder BackgroundColor="{StaticResource HalfTransparentDarkForegroundThemeColor}"
+                                                      BorderThickness="0"
+                                                      VerticalOptions="End"
+                                                      Padding="2">
+                                    <Label Text="{Binding TimeStamp, StringFormat='{0:g}'}"
+                                           IsVisible="{Binding TimeStamp, Converter={StaticResource InvertedNullToBoolConv}}"
+                                           TextColor="{StaticResource LightForegroundThemeColor}"
+                                           HorizontalOptions="Center"
+                                           FontSize="Small"/>
+                                </primitives:RadBorder>
+                            </Grid>
+                        </primitives:RadBorder>
+                    </listView:ListViewTemplateCell>
+                </DataTemplate>
+            </dataControls:RadListView.ItemTemplate>
+            <dataControls:RadListView.LayoutDefinition>
+                <listView:ListViewGridLayout HorizontalItemSpacing="5"
+                                             VerticalItemSpacing="5"
+                                             SpanCount="2">
+                    <listView:ListViewGridLayout.ItemLength>
+                        <OnPlatform x:TypeArguments="system:Double">
+                            <On Platform="Android"
+                                Value="120" />
+                            <On Platform="iOS"
+                                Value="110" />
+                            <On Platform="UWP"
+                                Value="150" />
+                        </OnPlatform>
+                    </listView:ListViewGridLayout.ItemLength>
+                </listView:ListViewGridLayout>
+            </dataControls:RadListView.LayoutDefinition>
+        </dataControls:RadListView>
+
+        <Label Text="{Binding CurrentStatus}"
+               IsVisible="{Binding CurrentStatus, Converter={StaticResource InvertedNullToBoolConv}}"
+               LineBreakMode="WordWrap"
+               HorizontalOptions="Center"
+               Margin="10,0"
+               Grid.Row="1"
+               Grid.ColumnSpan="2" 
+               Grid.Column="0" />
+
+        <input:RadButton Text="Request Photo"
+                         Command="{Binding RequestPhotoCommand}"
+                         IsEnabled="{Binding IsServerConnected}"
+                         Style="{StaticResource RoundButtonStyle}"
+                         BackgroundColor="{StaticResource DarkGrayThemeColor}"
+                         HeightRequest="40"
+                         Margin="10,10,5,5"
+                         Grid.Row="2"
+                         Grid.Column="0" />
+
+        <input:RadButton Text="Request Flush"
+                         Command="{Binding RequestFlushCommand}"
+                         IsEnabled="{Binding IsServerConnected}"
+                         Style="{StaticResource RoundButtonStyle}"
+                         BackgroundColor="{StaticResource DarkGrayThemeColor}"
+                         HeightRequest="40"
+                         Margin="5,10,10,5"
+                         Grid.Row="2"
+                         Grid.Column="1" />
+
+        <input:RadButton Text="Request Analyze"
+                         Command="{Binding RequestAnalyzeCommand}"
+                         IsEnabled="{Binding IsServerConnected}"
+                         Style="{StaticResource RoundButtonStyle}"
+                         BackgroundColor="{StaticResource DarkGreenThemeColor}"
+                         HeightRequest="50"
+                         Margin="10,0,10,10"
+                         Grid.Row="3"
+                         Grid.Column="0"
+                         Grid.ColumnSpan="2"/>
+
+        <primitives:RadBorder BackgroundColor="{StaticResource HalfTransparentDarkForegroundThemeColor}"
+                              IsVisible="{Binding IsDetailPopupOpen}"
+                              Grid.Row="0"
+                              Grid.RowSpan="4"
+                              Grid.Column="0"
+                              Grid.ColumnSpan="2">
+            <Grid BackgroundColor="WhiteSmoke"
+                  ColumnSpacing="0"
+                  Margin="20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="2*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="3*" />
+                </Grid.RowDefinitions>
+
+                <Image Source="{Binding SelectedOperation.ImageUrl}"
+                       IsVisible="{Binding SelectedOperation.ImageUrl, Converter={StaticResource InvertedNullToBoolConv}}"
+                       Aspect="AspectFill"
+                       VerticalOptions="FillAndExpand"
+                       HorizontalOptions="FillAndExpand"
+                       Grid.Row="0"
+                       Margin="0" />
+
+                <StackLayout Margin="20"
+                             VerticalOptions="Start"
+                             Grid.Row="1"
+                             Grid.Column="0">
+                    <Label Text="{Binding SelectedOperation.Requester}"
+                           IsVisible="{Binding SelectedOperation.Requester, Converter={StaticResource InvertedNullToBoolConv}}"
+                           LineBreakMode="NoWrap"
+                           FontSize="16" />
+                    <Label Text="{Binding SelectedOperation.TimeStamp, StringFormat='{0:g}'}"
+                           IsVisible="{Binding SelectedOperation.Message, Converter={StaticResource InvertedNullToBoolConv}}"
+                           LineBreakMode="WordWrap"
+                           FontSize="13" />
+                    <Label Text="{Binding SelectedOperation.Message}"
+                           IsVisible="{Binding SelectedOperation.Message, Converter={StaticResource InvertedNullToBoolConv}}"
+                           LineBreakMode="WordWrap"
+                           FontSize="13" />
+                </StackLayout>
+
+                <Grid ColumnSpacing="0"
+                      Grid.Row="2"
+                      VerticalOptions="End">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+
+                    <input:RadButton Text="delete"
+                                     FontSize="Medium"
+                                     Command="{Binding DeleteOperationCommand}"
+                                     Style="{StaticResource RoundButtonStyle}"
+                                     BackgroundColor="DarkRed"
+                                     Padding="0"
+                                     Margin="10,10,5,10"
+                                     HeightRequest="40"
+                                     HorizontalOptions="Fill"
+                                     BorderThickness="0"
+                                     Grid.Column="0" />
+
+                    <input:RadButton Text="share"
+                                     Command="{Binding ShareOperationCommand}"
+                                     IsVisible="{Binding SelectedOperation.ImageUrl, Converter={StaticResource InvertedNullToBoolConv}}"
+                                     Style="{StaticResource RoundButtonStyle}"
+                                     BackgroundColor="{StaticResource DarkGreenThemeColor}"
+                                     FontSize="Medium"
+                                     HeightRequest="40"
+                                     HorizontalOptions="Fill"
+                                     BorderThickness="0"
+                                     Padding="0"
+                                     Margin="5,10,5,10"
+                                     Grid.Column="1" />
+
+                    <input:RadButton Text="close"
+                                     Command="{Binding TogglePopupCommand}"
+                                     Style="{StaticResource RoundButtonStyle}"
+                                     BackgroundColor="{StaticResource DarkBlueThemeColor}"
+                                     FontSize="Medium"
+                                     HeightRequest="40"
+                                     HorizontalOptions="Fill"
+                                     BorderThickness="0"
+                                     Padding="0"
+                                     Margin="5,10,10,10"
+                                     Grid.Column="2" />
+
+                </Grid>
+            </Grid>
+        </primitives:RadBorder>
+
+        <primitives:RadBusyIndicator x:Name="BusyIndicator"
+                                     IsBusy="{Binding IsServerConnected, Converter={StaticResource InvertBoolConv}}"
+                                     BusyContent="{Binding IsBusyMessage}"
+                                     AnimationType="{Binding BusyAnimationType}"
+                                     IsVisible="{Binding IsServerConnected, Converter={StaticResource InvertBoolConv}}"
+                                     Style="{StaticResource BusyIndicatorStyle}"
+                                     Grid.Row="0"
+                                     Grid.RowSpan="4"
+                                     Grid.Column="0"
+                                     Grid.ColumnSpan="2" />
+    </Grid>
+</ContentPage>

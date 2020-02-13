@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="Flusher.Forms.Views.HomePageMaster"
+             Title="Master">
+    <Grid>
+        <ListView x:Name="MenuItemsListView"
+                  ItemsSource="{Binding MenuItems}"
+                  SeparatorVisibility="Default"
+                  HasUnevenRows="true">
+            <ListView.Header>
+                <Grid BackgroundColor="{StaticResource LightGrayThemeColor}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30" />
+                        <RowDefinition Height="80" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="10" />
+                    </Grid.RowDefinitions>
+                    <Label Text="Flusher"
+                           TextColor="{StaticResource LightForegroundThemeColor}"
+                           Style="{DynamicResource SubtitleStyle}"
+                           Grid.Column="1"
+                           Grid.Row="2" />
+                </Grid>
+            </ListView.Header>
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <ViewCell>
+                        <StackLayout Padding="15,10"
+                                     HorizontalOptions="FillAndExpand">
+                            <Label Text="{Binding Title}"
+                                   VerticalOptions="FillAndExpand"
+                                   VerticalTextAlignment="Center"
+                                   FontSize="24" />
+                        </StackLayout>
+                    </ViewCell>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</ContentPage>
