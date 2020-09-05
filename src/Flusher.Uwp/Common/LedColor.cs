@@ -6,6 +6,7 @@
         Green,
         Red,
         Blue,
+        Purple,
         Black
     }
 }

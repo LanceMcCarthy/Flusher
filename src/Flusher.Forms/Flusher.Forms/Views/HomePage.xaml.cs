@@ -21,6 +21,8 @@ namespace Flusher.Forms.Views
             if (item == null)
                 return;
 
+            (App.Current.MainPage as NavigationPage).Navigation.
+
             var page = (Page)Activator.CreateInstance(item.TargetType);
             page.Title = item.Title;
 
@@ -28,6 +30,7 @@ namespace Flusher.Forms.Views
             IsPresented = false;
 
             MasterPage.ListView.SelectedItem = null;
+
         }
     }
 }

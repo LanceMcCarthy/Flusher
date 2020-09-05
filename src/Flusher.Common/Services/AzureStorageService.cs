@@ -1,19 +1,18 @@
-﻿using System;
+﻿using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using CommonHelpers.Common;
+using Flusher.Common.Helpers;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using CommonHelpers.Common;
-using Flusher.Common.Helpers;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace Flusher.Common.Services
 {
     public class AzureStorageService : BindableBase
     {
-        private readonly CloudBlobContainer container;
+        private readonly BlobContainerClient container;
         private bool isInitialized;
 
         /// <summary>
@@ -21,9 +20,7 @@ namespace Flusher.Common.Services
         /// </summary>
         public AzureStorageService()
         {
-            var account = CloudStorageAccount.Parse(Secrets.BlobConnectionString);
-            var client = account.CreateCloudBlobClient();
-            container = client.GetContainerReference(Secrets.BlobContainerName);
+            container = new BlobContainerClient(Secrets.BlobConnectionString, Secrets.BlobContainerName);
         }
 
         /// <summary>
@@ -64,17 +61,18 @@ namespace Flusher.Common.Services
         /// <param name="fileNameWithExtension">The name of the file, with file extension specified (e.g. 'photo.jpg').</param>
         /// <param name="filePath">The path to the file on the local file system.</param>
         /// <returns>Primary uri to the file.</returns>
-        public async Task<StorageUri> UploadPhotoAsync(string fileNameWithExtension, string filePath)
+        public async Task<Uri> UploadPhotoAsync(string fileNameWithExtension, string filePath)
         {
             if (!IsInitialized)
                 return null;
 
-            var blob = container.GetBlockBlobReference(fileNameWithExtension);
-            await blob.UploadFromFileAsync(filePath);
+            var blob = container.GetBlobClient(fileNameWithExtension);
+
+            await blob.UploadAsync(filePath);
 
             await CleanupOldImagesAsync().ConfigureAwait(false);
 
-            return blob.StorageUri;
+            return blob.Uri;
         }
 
         /// <summary>
@@ -83,17 +81,21 @@ namespace Flusher.Common.Services
         /// <param name="fileNameWithExtension">The name of the file, with file extension specified (e.g. 'photo.jpg').</param>
         /// <param name="imgBytes">The byte array of the image after it has been encoded.</param>
         /// <returns>Primary uri to the file.</returns>
-        public async Task<StorageUri> UploadPhotoAsync(string fileNameWithExtension, byte[] imgBytes)
+        public async Task<Uri> UploadPhotoAsync(string fileNameWithExtension, byte[] imgBytes)
         {
             if (!IsInitialized)
                 return null;
 
-            var blob = container.GetBlockBlobReference(fileNameWithExtension);
-            await blob.UploadFromByteArrayAsync(imgBytes, 0, imgBytes.Length);
+            using (var memStream = new MemoryStream(imgBytes))
+            {
+                var blob = container.GetBlobClient(fileNameWithExtension);
 
-            await CleanupOldImagesAsync().ConfigureAwait(false);
+                await blob.UploadAsync(memStream);
 
-            return blob.StorageUri;
+                await CleanupOldImagesAsync().ConfigureAwait(false);
+
+                return blob.Uri;
+            }
         }
 
         /// <summary>
@@ -102,17 +104,18 @@ namespace Flusher.Common.Services
         /// <param name="fileNameWithExtension">The name of the file, with file extension specified (e.g. 'photo.jpg').</param>
         /// <param name="imageStream">The stream of the image after it has been encoded.</param>
         /// <returns>Primary uri to the file.</returns>
-        public async Task<StorageUri> UploadPhotoAsync(string fileNameWithExtension, Stream imageStream)
+        public async Task<Uri> UploadPhotoAsync(string fileNameWithExtension, Stream imageStream)
         {
             if (!IsInitialized)
                 return null;
 
-            var blob = container.GetBlockBlobReference(fileNameWithExtension);
-            await blob.UploadFromStreamAsync(imageStream);
+            var blob = container.GetBlobClient(fileNameWithExtension);
+
+            await blob.UploadAsync(imageStream);
 
             await CleanupOldImagesAsync().ConfigureAwait(false);
 
-            return blob.StorageUri;
+            return blob.Uri;
         }
 
         /// <summary>
@@ -125,24 +128,22 @@ namespace Flusher.Common.Services
 
             try
             {
-                BlobContinuationToken continuationToken = null;
-                var blobsToDelete = new List<IListBlobItem>();
+                var blobsToDelete = new List<BlobItem>();
+                var blobs = container.GetBlobs();
 
-                do
+                foreach (var blob in blobs)
                 {
-                    var resultSegment = await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.None, null, continuationToken, null, null);
-
-                    continuationToken = resultSegment.ContinuationToken;
-
-                    blobsToDelete.AddRange(resultSegment.Results.Where(blob => DateTime.Now - blob.Container.Properties.LastModified > ImageFileLifeSpan));
+                    if (DateTime.Now - blob.Properties.LastModified > ImageFileLifeSpan)
+                    {
+                        blobsToDelete.Add(blob);
+                    }
                 }
-                while (continuationToken != null);
 
                 if (blobsToDelete.Any())
                 {
                     foreach (var outdatedBlob in blobsToDelete)
                     {
-                        await outdatedBlob.Container.DeleteIfExistsAsync();
+                        await container.DeleteBlobIfExistsAsync(outdatedBlob.Name, DeleteSnapshotsOption.IncludeSnapshots);
                     }
 
                     Console.WriteLine($"Cleaned Up {blobsToDelete.Count} old files.");

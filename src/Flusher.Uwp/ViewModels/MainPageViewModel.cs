@@ -26,7 +26,6 @@ using Windows.Graphics.Imaging;
 using Windows.Media;
 using Windows.Media.MediaProperties;
 using Windows.Storage;
-using Windows.Storage.Search;
 using Windows.Storage.Streams;
 using Windows.UI.Core;
 using Windows.UI.Xaml.Media.Imaging;
@@ -164,6 +163,7 @@ namespace Flusher.Uwp.ViewModels
             catch (Exception ex)
             {
                 Log($"[ERROR] Azure storage initialization error: {ex.Message}");
+                throw;
             }
         }
 
@@ -181,6 +181,7 @@ namespace Flusher.Uwp.ViewModels
             catch (Exception ex)
             {
                 Log($"[ERROR] Camera initialization error: {ex.Message}");
+                throw;
             }
         }
 
@@ -212,6 +213,7 @@ namespace Flusher.Uwp.ViewModels
             catch (Exception ex)
             {
                 Log($"[ERROR] Servo initialization error: {ex.Message}");
+                throw;
             }
         }
 
@@ -242,45 +244,53 @@ namespace Flusher.Uwp.ViewModels
             catch (Exception ex)
             {
                 Log($"[ERROR] SignalR initialization error: {ex.Message}");
+                throw;
             }
         }
 
         private void InitializeGpio()
         {
-            Log($"[INFO] Initializing GPIO...");
-
-            gpioController = GpioController.GetDefault();
-
-            if (gpioController == null)
+            try
             {
-                return;
+                Log($"[INFO] Initializing GPIO...");
+
+                gpioController = GpioController.GetDefault();
+
+                if (gpioController == null)
+                {
+                    return;
+                }
+
+                flashLedPin = gpioController.OpenPin(FlashLedGpioPinNumber);
+                redLedPin = gpioController.OpenPin(RedLedGpioPinNumber);
+                greenLedPin = gpioController.OpenPin(GreenLedGpioPinNumber);
+                blueLedPin = gpioController.OpenPin(BlueLedGpioPinNumber);
+                buttonPin = gpioController.OpenPin(ButtonGpioPinNumber);
+
+                flashLedPin.SetDriveMode(GpioPinDriveMode.Output);
+                redLedPin.SetDriveMode(GpioPinDriveMode.Output);
+                greenLedPin.SetDriveMode(GpioPinDriveMode.Output);
+                blueLedPin.SetDriveMode(GpioPinDriveMode.Output);
+                buttonPin.SetDriveMode(buttonPin.IsDriveModeSupported(GpioPinDriveMode.InputPullUp)
+                        ? GpioPinDriveMode.InputPullUp
+                        : GpioPinDriveMode.Input);
+                
+                flashLedPin.Write(GpioPinValue.Low);
+                redLedPin.Write(GpioPinValue.Low);
+                greenLedPin.Write(GpioPinValue.Low);
+                blueLedPin.Write(GpioPinValue.Low);
+                buttonPin.Write(GpioPinValue.High);
+
+                buttonPin.DebounceTimeout = TimeSpan.FromMilliseconds(1000);
+                buttonPin.ValueChanged += ButtonGpioPinValueChanged;
+
+                Log($"[INFO] GPIO ready!");
             }
-
-            flashLedPin = gpioController.OpenPin(FlashLedGpioPinNumber);
-            redLedPin = gpioController.OpenPin(RedLedGpioPinNumber);
-            greenLedPin = gpioController.OpenPin(GreenLedGpioPinNumber);
-            blueLedPin = gpioController.OpenPin(BlueLedGpioPinNumber);
-            buttonPin = gpioController.OpenPin(ButtonGpioPinNumber);
-
-            flashLedPin.SetDriveMode(GpioPinDriveMode.Output);
-            redLedPin.SetDriveMode(GpioPinDriveMode.Output);
-            greenLedPin.SetDriveMode(GpioPinDriveMode.Output);
-            blueLedPin.SetDriveMode(GpioPinDriveMode.Output);
-            buttonPin.SetDriveMode(buttonPin.IsDriveModeSupported(GpioPinDriveMode.InputPullUp)
-                    ? GpioPinDriveMode.InputPullUp
-                    : GpioPinDriveMode.Input);
-
-
-            flashLedPin.Write(GpioPinValue.Low);
-            redLedPin.Write(GpioPinValue.Low);
-            greenLedPin.Write(GpioPinValue.Low);
-            blueLedPin.Write(GpioPinValue.Low);
-            buttonPin.Write(GpioPinValue.High);
-
-            buttonPin.DebounceTimeout = TimeSpan.FromMilliseconds(1000);
-            buttonPin.ValueChanged += ButtonGpioPinValueChanged;
-
-            Log($"[INFO] GPIO ready!");
+            catch (Exception ex)
+            {
+                Log($"[ERROR] GPIO initialization error: {ex.Message}");
+                throw;
+            }
         }
         #endregion
 
@@ -317,7 +327,7 @@ namespace Flusher.Uwp.ViewModels
         {
             if (IsBusy)
                 return;
-
+             
             try
             {
                 IsBusy = true;
@@ -327,11 +337,13 @@ namespace Flusher.Uwp.ViewModels
                 Log(message);
                 await flusherService.SendMessageAsync(message);
 
-                FlusherServo.MoveServo(100);
-                message = "Flush started, waiting 5 seconds...";
+                FlusherServo.MoveServo(180);
+                message = "Flush started, waiting 8 seconds...";
                 Log(message);
                 await flusherService.SendMessageAsync(message);
-                await Task.Delay(5000);
+                await Task.Delay(4000);
+                await flusherService.SendMessageAsync("4 seconds remaining...");
+                await Task.Delay(4000);
 
                 FlusherServo.MoveServo(0);
                 message = "Flush complete.";
@@ -358,7 +370,11 @@ namespace Flusher.Uwp.ViewModels
         {
             Log($"[INFO] Photo Requested by {requester}.");
 
+            SetLedColor(LedColor.Blue);
+
             var photoResult = await GeneratePhotoAsync(requester);
+
+            SetLedColor(LedColor.Green);
 
             await flusherService.SendPhotoResultAsync("Photo request complete.", photoResult.BlobStorageUrl);
         }
@@ -372,35 +388,49 @@ namespace Flusher.Uwp.ViewModels
 
         private async void FlusherService_AnalyzeRequested(string requester)
         {
-            Log($"[INFO] Analyze Requested by {requester}.");
-
-            await flusherService.SendMessageAsync("Analyzing...");
-
-            var result = await AnalyzeAsync();
-
-            if (result.DidOperationComplete)
+            try
             {
-                // Inform subscribers of negative/positive result along with photo used for analyzing.
-                await flusherService.SendAnalyzeResultAsync(result.Message, result.PhotoResult.BlobStorageUrl);
+                Log($"[INFO] Analyze Requested by {requester}.");
 
-                // If there was a positive detection, invoke Flush and send email.
-                if (result.IsPositiveResult)
+                SetLedColor(LedColor.Purple);
+
+                await flusherService.SendMessageAsync("Analyzing...");
+
+                var result = await AnalyzeAsync();
+
+                if (result.DidOperationComplete)
                 {
-                    Log("[DETECTION] Poop detected!");
-                    FlusherService_FlushRequested(Requester);
+                    // Inform subscribers of negative/positive result along with photo used for analyzing.
+                    await flusherService.SendAnalyzeResultAsync(result.Message, result.PhotoResult.BlobStorageUrl);
 
-                    Log("[INFO] Alerting email subscribers");
-                    await SendEmailAsync(result.PhotoResult.BlobStorageUrl);
+                    // If there was a positive detection, invoke Flush and send email.
+                    if (result.IsPositiveResult)
+                    {
+                        Log("[DETECTION] Poop detected!");
+                        FlusherService_FlushRequested(Requester);
+
+                        Log("[INFO] Alerting email subscribers");
+                        await SendEmailAsync(result.PhotoResult.BlobStorageUrl);
+                    }
+                    else
+                    {
+                        Log("[DETECTION] No objects detected.");
+                    }
                 }
                 else
                 {
-                    Log("[DETECTION] No objects detected.");
+                    // Inform subscribers of error
+                    await flusherService.SendMessageAsync("Analyze operation did not complete, please try again later. If this continues to happen, check server or IoT implementation..");
                 }
             }
-            else
+            catch (Exception ex)
             {
-                // Inform subscribers of error
-                await flusherService.SendMessageAsync("Analyze operation did not complete, please try again later. If this continues to happen, check server or IoT implementation..");
+                Log($"[Error] in FlusherService_AnalyzeRequested: {ex.Message}");
+                SetLedColor(LedColor.Red);
+            }
+            finally
+            {
+                SetLedColor(LedColor.Green);
             }
         }
 
@@ -450,10 +480,9 @@ namespace Flusher.Uwp.ViewModels
                 IsBusy = true;
                 SetLedColor(LedColor.Blue);
 
-                FlusherServo.MoveServo(100);
-                Log("Flush started, waiting 5 seconds...");
-                await Task.Delay(5000);
-
+                FlusherServo.MoveServo(180);
+                Log("Flush started, waiting 8 seconds...");
+                await Task.Delay(8000);
                 FlusherServo.MoveServo(0);
 
                 Log("Flush complete.");
@@ -560,13 +589,16 @@ namespace Flusher.Uwp.ViewModels
 
                 Log($"[INFO] Capture successful!  Uploading file to Azure blob ({file.Name})...");
                 string imgUrl = null;
-                using (var stream = await file.OpenStreamForReadAsync())
-                {
-                    var bytes = new byte[(int) stream.Length];
-                    await stream.ReadAsync(bytes, 0, (int) stream.Length);
-                    var storageUri = await storageService.UploadPhotoAsync(file.Name, bytes);
 
-                    imgUrl = storageUri.PrimaryUri.OriginalString;
+                using (Stream stream = await file.OpenStreamForReadAsync())
+                {
+                    //var bytes = new byte[(int)stream.Length];
+                    //await stream.ReadAsync(bytes, 0, (int)stream.Length);
+
+
+                    var storageUri = await storageService.UploadPhotoAsync(informativeFileName, stream);
+
+                    imgUrl = storageUri.OriginalString;
 
                     // If something went wrong with PrimaryUri.OriginalString, manually create the URL with a known root url, container name and file name
                     if (string.IsNullOrEmpty(imgUrl)) imgUrl = $"{Secrets.AzureStorageRootUrl}/{Secrets.BlobContainerName}/{file.Name}";
@@ -810,6 +842,11 @@ namespace Flusher.Uwp.ViewModels
                         redLedPin.Write(GpioPinValue.High);
                         greenLedPin.Write(GpioPinValue.Low);
                         blueLedPin.Write(GpioPinValue.Low);
+                        break;
+                    case LedColor.Purple:
+                        redLedPin.Write(GpioPinValue.Low);
+                        greenLedPin.Write(GpioPinValue.High);
+                        blueLedPin.Write(GpioPinValue.High);
                         break;
                     case LedColor.Blue:
                         redLedPin.Write(GpioPinValue.Low);
