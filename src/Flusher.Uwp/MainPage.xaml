@@ -81,8 +81,8 @@
                                Margin="10,-50,10,0"
                                Style="{ThemeResource SubtitleTextBlockStyle}"/>
 
-                    <dataVisualization:RadRadialGauge MinValue="0"
-                                                      MaxValue="100"
+                    <dataVisualization:RadRadialGauge MinValue="{Binding MinDutyCyclePercent}"
+                                                      MaxValue="{Binding MaxDutyCyclePercent}"
                                                       MaxAngle="180"
                                                       MinAngle="0"
                                                       TickStep="2"
@@ -90,7 +90,7 @@
                                                       Margin="10,10,10,0">
                         <dataVisualization:RadRadialGauge.Indicators>
                             <dataVisualization:ArrowGaugeIndicator Brush="{ThemeResource SystemControlForegroundAccentBrush}"
-                                                                   Value="{Binding FlusherServo.DesiredAngle}"
+                                                                   Value="{Binding DutyCyclePercentage}"
                                                                    IsAnimated="True" />
                         </dataVisualization:RadRadialGauge.Indicators>
                     </dataVisualization:RadRadialGauge>
@@ -135,36 +135,6 @@
                             <chart:PropertyNameDataPointBinding PropertyName="Value" />
                         </chart:SplineAreaSeries.ValueBinding>
                     </chart:SplineAreaSeries>
-
-                    <chart:ScatterPointSeries ItemsSource="{Binding AngleAdjustmentHistory}">
-                        <chart:ScatterPointSeries.PointTemplate>
-                            <DataTemplate>
-                                <Ellipse Fill="OrangeRed"
-                                         Width="5"
-                                         Height="5" />
-                            </DataTemplate>
-                        </chart:ScatterPointSeries.PointTemplate>
-                        <chart:ScatterPointSeries.VerticalAxis>
-                            <chart:LinearAxis Title="Angle"
-                                              LabelFormat="{}{0,0:N0} °"
-                                              LastLabelVisibility="Hidden"
-                                              HorizontalLocation="Right" />
-                        </chart:ScatterPointSeries.VerticalAxis>
-                        <chart:ScatterPointSeries.HorizontalAxis>
-                            <chart:LinearAxis Title="Duty Cycle"
-                                              LabelFormat="{}{0,0:N0} μs"
-                                              MajorStep="5"
-                                              LabelFitMode="Rotate"
-                                              LastLabelVisibility="Hidden"
-                                              VerticalLocation="Top" />
-                        </chart:ScatterPointSeries.HorizontalAxis>
-                        <chart:ScatterPointSeries.XValueBinding>
-                            <chart:PropertyNameDataPointBinding PropertyName="XValue" />
-                        </chart:ScatterPointSeries.XValueBinding>
-                        <chart:ScatterPointSeries.YValueBinding>
-                            <chart:PropertyNameDataPointBinding PropertyName="YValue" />
-                        </chart:ScatterPointSeries.YValueBinding>
-                    </chart:ScatterPointSeries>
                 </chart:RadCartesianChart.Series>
             </chart:RadCartesianChart>
         </Grid>
@@ -180,76 +150,35 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <StackPanel Background="{ThemeResource ButtonBackgroundThemeBrush}"
-                        Padding="10"
-                        Spacing="10">
-                <TextBlock Text="Direct Servo Control"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           FontWeight="SemiBold"
-                           FontSize="18" />
-                <StackPanel Orientation="Horizontal"
-                            Spacing="10"
-                            HorizontalAlignment="Center">
-                    <TextBlock Text="Angle:"
-                               HorizontalAlignment="Center" />
-                    <TextBlock Text="{Binding FlusherServo.DesiredAngle, Converter={StaticResource AngleDisplayConv}}"
-                               HorizontalAlignment="Center" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal"
-                            Spacing="10"
-                            HorizontalAlignment="Center">
-                    <TextBlock Text="Pulse Width (µs):"
-                               HorizontalAlignment="Center" />
-                    <TextBlock Text="{Binding FlusherServo.DesiredPulseWidth, Converter={StaticResource PulseWidthDisplayConv}}"
-                               HorizontalAlignment="Center" />
-                </StackPanel>
-            </StackPanel>
 
-            <Slider Minimum="{Binding MinimumAngle}"
-                    Maximum="{Binding MaximumAngle}"
-                    Value="{Binding FlusherServo.DesiredAngle, Mode=TwoWay}"
+            <Slider Minimum="{Binding MinDutyCyclePercent}"
+                    Maximum="{Binding MaxDutyCyclePercent}"
+                    Value="{Binding DutyCyclePercentage, Mode=TwoWay}"
                     Orientation="Vertical"
                     TickFrequency="10"
                     TickPlacement="Outside"
-                    LargeChange="10"
-                    SmallChange="1"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Stretch"
+                    Margin="20"
                     Grid.Row="1" />
 
             <StackPanel Grid.Row="2">
-                <CheckBox Content="Auto-update"
-                          MinWidth="60"
-                          HorizontalAlignment="Center"
-                          IsChecked="{Binding FlusherServo.AutoFollow, Mode=TwoWay}" />
-
-                <input:RadNumericBox Minimum="{Binding MinimumAngle}"
-                                     Maximum="{Binding MaximumAngle}"
-                                     Value="{Binding FlusherServo.DesiredAngle, Mode=TwoWay}"
-                                     IsEnabled="{Binding FlusherServo.AutoFollow, Converter={StaticResource InvertBooleanConv}}"
-                                     SmallChange="1"
-                                     LargeChange="10"
-                                     Watermark="Set angle"
+                <input:RadNumericBox Minimum="{Binding MinDutyCyclePercent}"
+                                     Maximum="{Binding MaxDutyCyclePercent}"
+                                     Value="{Binding DutyCyclePercentage, Mode=TwoWay}"
+                                     Watermark="Duty Cycle Percentage"
                                      MinWidth="166"
-                                     Margin="5,5,5,0"
-                                     HorizontalAlignment="Center" />
-
-                <Button Command="{Binding SetAngleCommand}"
-                        Content="Change Angle"
-                        IsEnabled="{Binding FlusherServo.AutoFollow, Converter={StaticResource InvertBooleanConv}}"
-                        HorizontalAlignment="Center"
-                        Margin="10"
-                        MinWidth="166" />
+                                     HorizontalAlignment="Center"
+                                     Margin="20" />
             </StackPanel>
         </Grid>
 
         <primitives:RadBusyIndicator IsActive="{Binding IsBusy}"
+                                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConv}, FallbackValue=Collapsed}"
                                      Content="{Binding IsBusyMessage}"
+                                     AnimationStyle="AnimationStyle7"
                                      Background="#AA000000"
                                      Foreground="White"
-                                     Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConv}, FallbackValue=Collapsed}"
-                                     AnimationStyle="AnimationStyle7"
                                      Grid.Column="0"
                                      Grid.ColumnSpan="2" 
                                      Grid.Row="0"

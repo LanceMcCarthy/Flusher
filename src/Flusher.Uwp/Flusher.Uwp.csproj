@@ -124,8 +124,6 @@
     <Compile Include="Converters\BoolToVisibilityConverter.cs" />
     <Compile Include="Converters\InvertBooleanConverter.cs" />
     <Compile Include="Converters\PulseWidthDisplayConverter.cs" />
-    <Compile Include="Services\Servo\ServoChangedEventArgs.cs" />
-    <Compile Include="Services\Servo\ServoService.cs" />
     <Compile Include="Interfaces\IScrollable.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>

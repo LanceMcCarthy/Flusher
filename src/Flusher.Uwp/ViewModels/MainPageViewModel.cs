@@ -7,7 +7,6 @@ using Flusher.Common.Services;
 using Flusher.Uwp.Common;
 using Flusher.Uwp.Interfaces;
 using Flusher.Uwp.Services;
-using Flusher.Uwp.Services.Servo;
 using Flusher.Uwp.Vision;
 using Microsoft.IoT.Lightning.Providers;
 using SendGrid;
@@ -22,6 +21,7 @@ using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
 using Windows.Devices;
 using Windows.Devices.Gpio;
+using Windows.Devices.Pwm;
 using Windows.Graphics.Imaging;
 using Windows.Media;
 using Windows.Media.MediaProperties;
@@ -44,6 +44,8 @@ namespace Flusher.Uwp.ViewModels
         private const int GreenLedGpioPinNumber = 20;
         private const int BlueLedGpioPinNumber = 16;
 
+        private PwmController pwmController;
+        private PwmPin pwmPin;
         private GpioController gpioController;
         private GpioPin buttonPin;
         private GpioPin redLedPin;
@@ -55,12 +57,12 @@ namespace Flusher.Uwp.ViewModels
         private AzureStorageService storageService;
         private CameraService camService;
         private FlusherService flusherService;
-        private ServoService flusherServo;
 
         private ObjectDetection onyxObjectDetection;
         private BitmapImage lastImage;
-        private double minimumAngle;
-        private double maximumAngle = 180;
+        private double minDutyCyclePercent = 0.04;
+        private double maxDutyCyclePercent = 0.10;
+        private double dutyCyclePercentage;
         private string outputText = "Starting up, please wait...";
         private bool isServerConnected;
 
@@ -74,12 +76,6 @@ namespace Flusher.Uwp.ViewModels
 
         #region Properties
 
-        public ServoService FlusherServo
-        {
-            get => flusherServo;
-            set => SetProperty(ref flusherServo, value);
-        }
-
         public ObservableCollection<ChartDataPoint> AngleAdjustmentHistory { get; set; } = new ObservableCollection<ChartDataPoint>();
 
         public BitmapImage LastImage
@@ -88,16 +84,16 @@ namespace Flusher.Uwp.ViewModels
             set => SetProperty(ref lastImage, value);
         }
 
-        public double MinimumAngle
+        public double MinDutyCyclePercent
         {
-            get => minimumAngle;
-            set => SetProperty(ref minimumAngle, value);
+            get => minDutyCyclePercent;
+            set => SetProperty(ref minDutyCyclePercent, value);
         }
 
-        public double MaximumAngle
+        public double MaxDutyCyclePercent
         {
-            get => maximumAngle;
-            set => SetProperty(ref maximumAngle, value);
+            get => maxDutyCyclePercent;
+            set => SetProperty(ref maxDutyCyclePercent, value);
         }
 
         public string Requester { get; } = "IoT Client";
@@ -114,7 +110,22 @@ namespace Flusher.Uwp.ViewModels
             set => SetProperty(ref isServerConnected, value);
         }
 
-        public DelegateCommand SetAngleCommand { get; set; }
+        
+        public double DutyCyclePercentage
+        {
+            get => dutyCyclePercentage;
+            set
+            {
+                if (SetProperty(ref dutyCyclePercentage, value))
+                {
+                    if (pwmPin != null && pwmPin.IsStarted)
+                    {
+                        pwmPin.SetActiveDutyCyclePercentage(value);
+                        this.DutyCyclePercentChanged(value);
+                    }
+                }
+            }
+        }
 
         public DelegateCommand AnalyzeCommand { get; set; }
 
@@ -134,12 +145,9 @@ namespace Flusher.Uwp.ViewModels
 
             await InitializeAzureStorageService();
             await InitializeCameraServiceAsync();
-            await InitializeServoServiceAsync();
+            await InitializePwmAsync();
             await InitializeSignalRServiceAsync();
-            InitializeGpio();
-
-            // Start the servo at the proper angle for the physical toilet flusher.
-            FlusherServo.MoveServo(0);
+            await InitializeGpioAsync();
 
             await flusherService.SendMessageAsync($"Initialized! Camera Ready? {camService?.IsReady}.");
 
@@ -185,9 +193,9 @@ namespace Flusher.Uwp.ViewModels
             }
         }
 
-        private async Task InitializeServoServiceAsync()
+        private async Task InitializePwmAsync()
         {
-            Log($"[INFO] Initializing servo...");
+            Log($"[INFO] Initializing PWM...");
 
             try
             {
@@ -195,24 +203,24 @@ namespace Flusher.Uwp.ViewModels
                 if (LightningProvider.IsLightningEnabled)
                 {
                     LowLevelDevicesController.DefaultProvider = LightningProvider.GetAggregateProvider();
+                    Log("[INFO] PWM - LightningProvider is Enabled");
                 }
 
-                FlusherServo = new ServoService(ServoGpioPinNumber)
-                {
-                    AutoFollow = false
-                };
+                var pwmProvider = LightningPwmProvider.GetPwmProvider();
+                var pwmControllers = await PwmController.GetControllersAsync(pwmProvider);
+                pwmController = pwmControllers[1];
 
-                MaximumAngle = FlusherServo.MaxAngle;
+                pwmPin = pwmController.OpenPin(ServoGpioPinNumber);
+                pwmController.SetDesiredFrequency(50);
 
-                Log($"[INFO] Set servo range: 0° to {FlusherServo.MaxAngle}°");
+                pwmPin.Start();
+                pwmPin.SetActiveDutyCyclePercentage(this.MinDutyCyclePercent);
 
-                await FlusherServo.InitializeAsync();
-
-                FlusherServo.ServoChanged += FlusherServo_ServoAngleChanged;
+                Log("[INFO] PWM - Pin started.");
             }
             catch (Exception ex)
             {
-                Log($"[ERROR] Servo initialization error: {ex.Message}");
+                Log($"[ERROR] PWM initialization error: {ex.Message}");
                 throw;
             }
         }
@@ -248,50 +256,54 @@ namespace Flusher.Uwp.ViewModels
             }
         }
 
-        private void InitializeGpio()
+        private async Task InitializeGpioAsync()
         {
-            try
+            await Task.Run(() =>
             {
-                Log($"[INFO] Initializing GPIO...");
-
-                gpioController = GpioController.GetDefault();
-
-                if (gpioController == null)
+                try
                 {
-                    return;
-                }
+                    Log($"[INFO] Initializing GPIO...");
 
-                flashLedPin = gpioController.OpenPin(FlashLedGpioPinNumber);
-                redLedPin = gpioController.OpenPin(RedLedGpioPinNumber);
-                greenLedPin = gpioController.OpenPin(GreenLedGpioPinNumber);
-                blueLedPin = gpioController.OpenPin(BlueLedGpioPinNumber);
-                buttonPin = gpioController.OpenPin(ButtonGpioPinNumber);
+                    gpioController = GpioController.GetDefault();
 
-                flashLedPin.SetDriveMode(GpioPinDriveMode.Output);
-                redLedPin.SetDriveMode(GpioPinDriveMode.Output);
-                greenLedPin.SetDriveMode(GpioPinDriveMode.Output);
-                blueLedPin.SetDriveMode(GpioPinDriveMode.Output);
-                buttonPin.SetDriveMode(buttonPin.IsDriveModeSupported(GpioPinDriveMode.InputPullUp)
+                    if (gpioController == null)
+                    {
+                        return;
+                    }
+
+                    flashLedPin = gpioController.OpenPin(FlashLedGpioPinNumber);
+                    redLedPin = gpioController.OpenPin(RedLedGpioPinNumber);
+                    greenLedPin = gpioController.OpenPin(GreenLedGpioPinNumber);
+                    blueLedPin = gpioController.OpenPin(BlueLedGpioPinNumber);
+                    buttonPin = gpioController.OpenPin(ButtonGpioPinNumber);
+
+                    flashLedPin.SetDriveMode(GpioPinDriveMode.Output);
+                    redLedPin.SetDriveMode(GpioPinDriveMode.Output);
+                    greenLedPin.SetDriveMode(GpioPinDriveMode.Output);
+                    blueLedPin.SetDriveMode(GpioPinDriveMode.Output);
+                    buttonPin.SetDriveMode(buttonPin.IsDriveModeSupported(GpioPinDriveMode.InputPullUp)
                         ? GpioPinDriveMode.InputPullUp
                         : GpioPinDriveMode.Input);
-                
-                flashLedPin.Write(GpioPinValue.Low);
-                redLedPin.Write(GpioPinValue.Low);
-                greenLedPin.Write(GpioPinValue.Low);
-                blueLedPin.Write(GpioPinValue.Low);
-                buttonPin.Write(GpioPinValue.High);
 
-                buttonPin.DebounceTimeout = TimeSpan.FromMilliseconds(1000);
-                buttonPin.ValueChanged += ButtonGpioPinValueChanged;
+                    flashLedPin.Write(GpioPinValue.Low);
+                    redLedPin.Write(GpioPinValue.Low);
+                    greenLedPin.Write(GpioPinValue.Low);
+                    blueLedPin.Write(GpioPinValue.Low);
+                    buttonPin.Write(GpioPinValue.High);
 
-                Log($"[INFO] GPIO ready!");
-            }
-            catch (Exception ex)
-            {
-                Log($"[ERROR] GPIO initialization error: {ex.Message}");
-                throw;
-            }
+                    buttonPin.DebounceTimeout = TimeSpan.FromMilliseconds(1000);
+                    buttonPin.ValueChanged += ButtonGpioPinValueChanged;
+
+                    Log($"[INFO] GPIO ready!");
+                }
+                catch (Exception ex)
+                {
+                    Log($"[ERROR] GPIO initialization error: {ex.Message}");
+                    throw;
+                }
+            });
         }
+        
         #endregion
 
         #region SignalR Operations
@@ -337,7 +349,8 @@ namespace Flusher.Uwp.ViewModels
                 Log(message);
                 await flusherService.SendMessageAsync(message);
 
-                FlusherServo.MoveServo(180);
+                DutyCyclePercentage = this.MaxDutyCyclePercent;
+
                 message = "Flush started, waiting 8 seconds...";
                 Log(message);
                 await flusherService.SendMessageAsync(message);
@@ -345,7 +358,8 @@ namespace Flusher.Uwp.ViewModels
                 await flusherService.SendMessageAsync("4 seconds remaining...");
                 await Task.Delay(4000);
 
-                FlusherServo.MoveServo(0);
+                DutyCyclePercentage = this.MinDutyCyclePercent;
+
                 message = "Flush complete.";
                 Log(message);
                 await flusherService.SendMessageAsync(message);
@@ -392,7 +406,7 @@ namespace Flusher.Uwp.ViewModels
             {
                 Log($"[INFO] Analyze Requested by {requester}.");
 
-                SetLedColor(LedColor.Purple);
+                SetLedColor(LedColor.Blue);
 
                 await flusherService.SendMessageAsync("Analyzing...");
 
@@ -445,21 +459,17 @@ namespace Flusher.Uwp.ViewModels
 
         #region Value Changed Event Handlers
 
-        private void FlusherServo_ServoAngleChanged(object sender, ServoChangedEventArgs e)
+        private void DutyCyclePercentChanged(double percentage)
         {
             try
             {
-                if (AngleAdjustmentHistory.Count > 60)
-                {
-                    AngleAdjustmentHistory.RemoveAt(0);
-                }
-
+                // Update chart
+                if (AngleAdjustmentHistory.Count > 60) AngleAdjustmentHistory.RemoveAt(0);
+                
                 AngleAdjustmentHistory.Add(new ChartDataPoint
                 {
                     Date = DateTime.Now,
-                    Value = e.Angle,
-                    XValue = e.Angle,
-                    YValue = e.PulseWidth
+                    Value = percentage
                 });
             }
             catch (Exception ex)
@@ -480,10 +490,12 @@ namespace Flusher.Uwp.ViewModels
                 IsBusy = true;
                 SetLedColor(LedColor.Blue);
 
-                FlusherServo.MoveServo(180);
+                DutyCyclePercentage = this.MaxDutyCyclePercent;
+
                 Log("Flush started, waiting 8 seconds...");
                 await Task.Delay(8000);
-                FlusherServo.MoveServo(0);
+
+                DutyCyclePercentage = this.MinDutyCyclePercent;
 
                 Log("Flush complete.");
                 SetLedColor(LedColor.Green);
@@ -843,11 +855,6 @@ namespace Flusher.Uwp.ViewModels
                         greenLedPin.Write(GpioPinValue.Low);
                         blueLedPin.Write(GpioPinValue.Low);
                         break;
-                    case LedColor.Purple:
-                        redLedPin.Write(GpioPinValue.Low);
-                        greenLedPin.Write(GpioPinValue.High);
-                        blueLedPin.Write(GpioPinValue.High);
-                        break;
                     case LedColor.Blue:
                         redLedPin.Write(GpioPinValue.Low);
                         greenLedPin.Write(GpioPinValue.Low);
@@ -920,7 +927,9 @@ namespace Flusher.Uwp.ViewModels
             flusherService?.Dispose();
 
             Log("[INFO] Disposing Servo...");
-            FlusherServo?.Dispose();
+            pwmPin.Dispose();
+            pwmPin = null;
+            pwmController = null;
 
             Log("[INFO] Disposing ONYX object detection...");
             onyxObjectDetection?.Dispose();
