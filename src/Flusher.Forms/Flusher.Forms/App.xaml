@@ -7,13 +7,8 @@
              xmlns:telerikInput="clr-namespace:Telerik.XamarinForms.Input;assembly=Telerik.XamarinForms.Input"
              xmlns:primitives="clr-namespace:Telerik.XamarinForms.Primitives;assembly=Telerik.XamarinForms.Primitives"
              xmlns:listView="clr-namespace:Telerik.XamarinForms.DataControls.ListView;assembly=Telerik.XamarinForms.DataControls"
-             xmlns:dataGrid="clr-namespace:Telerik.XamarinForms.DataGrid;assembly=Telerik.XamarinForms.DataGrid"
-             xmlns:chart="clr-namespace:Telerik.XamarinForms.Chart;assembly=Telerik.XamarinForms.Chart"
              xmlns:input="clr-namespace:Telerik.XamarinForms.Input;assembly=Telerik.XamarinForms.Input"
              xmlns:dataControls="clr-namespace:Telerik.XamarinForms.DataControls;assembly=Telerik.XamarinForms.DataControls"
-             xmlns:conversationalUi="clr-namespace:Telerik.XamarinForms.ConversationalUI;assembly=Telerik.XamarinForms.ConversationalUI"
-             xmlns:pdfViewer="clr-namespace:Telerik.XamarinForms.PdfViewer;assembly=Telerik.XamarinForms.PdfViewer"
-             xmlns:imageEditor="clr-namespace:Telerik.XamarinForms.ImageEditor;assembly=Telerik.XamarinForms.ImageEditor"
              xmlns:styles="clr-namespace:Flusher.Forms.Styles;assembly=Flusher.Forms"
              mc:Ignorable="d"
              x:Class="Flusher.Forms.App">
@@ -24,12 +19,7 @@
                 <ResourceDictionary MergedWith="styles:CustomTheme" />
                 <ResourceDictionary MergedWith="input:TelerikThemeStyles" />
                 <ResourceDictionary MergedWith="primitives:TelerikThemeStyles" />
-                <ResourceDictionary MergedWith="chart:TelerikThemeStyles" />
                 <ResourceDictionary MergedWith="dataControls:TelerikThemeStyles" />
-                <ResourceDictionary MergedWith="dataGrid:TelerikThemeStyles" />
-                <ResourceDictionary MergedWith="imageEditor:TelerikThemeStyles" />
-                <ResourceDictionary MergedWith="conversationalUi:TelerikThemeStyles" />
-                <ResourceDictionary MergedWith="pdfViewer:TelerikThemeStyles" />
             </ResourceDictionary.MergedDictionaries>
 
             <!-- Theme Colors -->

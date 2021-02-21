@@ -6,12 +6,12 @@ using Xamarin.Forms.Xaml;
 namespace Flusher.Forms.Views
 {
     [XamlCompilation(XamlCompilationOptions.Compile)]
-    public partial class HomePage : MasterDetailPage
+    public partial class HomePage : FlyoutPage
     {
         public HomePage()
         {
             InitializeComponent();
-            MasterPage.ListView.ItemSelected += ListView_ItemSelected;
+            MenuPage1.ListView.ItemSelected += ListView_ItemSelected;
         }
 
         private void ListView_ItemSelected(object sender, SelectedItemChangedEventArgs e)
@@ -27,7 +27,7 @@ namespace Flusher.Forms.Views
             Detail = new NavigationPage(page);
             IsPresented = false;
 
-            MasterPage.ListView.SelectedItem = null;
+            MenuPage1.ListView.SelectedItem = null;
         }
     }
 }

@@ -2,7 +2,6 @@
 using Flusher.Common.Models;
 using Xamarin.Forms;
 using Flusher.Forms.ViewModels;
-using Telerik.XamarinForms.DataControls.ListView;
 
 namespace Flusher.Forms.Views
 {
@@ -17,7 +16,7 @@ namespace Flusher.Forms.Views
             BindingContext = viewModel = new OperationsViewModel();
         }
 
-        private void ListView_OnItemTapped(object sender, ItemTapEventArgs e)
+        private void ListView_OnItemTapped(object sender, Telerik.XamarinForms.DataControls.ListView.ItemTapEventArgs e)
         {
             if (e.Item is OperationMessage item)
             {
@@ -31,6 +30,18 @@ namespace Flusher.Forms.Views
             base.OnAppearing(); 
 
             await viewModel.InitializeAsync();
+        }
+
+        private void SelectableItemsView_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.CurrentSelection?.Count > 0)
+            {
+                if (e.CurrentSelection[0] is OperationMessage item)
+                {
+                    viewModel.SelectedOperation = item;
+                    viewModel.IsDetailPopupOpen = true;
+                }
+            }
         }
     }
 }

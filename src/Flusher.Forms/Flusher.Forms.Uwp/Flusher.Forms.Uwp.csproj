@@ -174,7 +174,7 @@
     <PackageReference Include="SkiaSharp.Views.Forms">
       <Version>2.80.2</Version>
     </PackageReference>
-    <PackageReference Include="Telerik.UI.for.Xamarin">
+    <PackageReference Include="Telerik.UI.for.Xamarin.Input">
       <Version>2021.1.119.1</Version>
     </PackageReference>
     <PackageReference Include="Xamarin.Essentials">

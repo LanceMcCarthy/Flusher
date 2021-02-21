@@ -5,11 +5,11 @@ using Flusher.Forms.Views;
 
 namespace Flusher.Forms.ViewModels
 {
-    public class HomePageMasterViewModel : ViewModelBase
+    public class MenuPageViewModel : ViewModelBase
     {
         private ObservableCollection<NavigationMenuItem> menuItems;
 
-        public HomePageMasterViewModel()
+        public MenuPageViewModel()
         {
         }
 
