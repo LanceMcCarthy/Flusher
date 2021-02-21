@@ -1,19 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<MasterDetailPage xmlns="http://xamarin.com/schemas/2014/forms"
+<FlyoutPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:d="http://xamarin.com/schemas/2014/forms/design"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              x:Class="Flusher.Forms.Views.HomePage"
              xmlns:views="clr-namespace:Flusher.Forms.Views">
-  <MasterDetailPage.Master>
-    <views:HomePageMaster x:Name="MasterPage" />
-  </MasterDetailPage.Master>
-  <MasterDetailPage.Detail>
+    <FlyoutPage.Flyout>
+    <views:MenuPage x:Name="MenuPage1" />
+  </FlyoutPage.Flyout>
+    <FlyoutPage.Detail>
     <NavigationPage>
       <x:Arguments>
           <views:OperationsPage/>
       </x:Arguments>
     </NavigationPage>
-  </MasterDetailPage.Detail>
-</MasterDetailPage>
+  </FlyoutPage.Detail>
+</FlyoutPage>

@@ -4,8 +4,8 @@
              xmlns:d="http://xamarin.com/schemas/2014/forms/design"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             x:Class="Flusher.Forms.Views.HomePageMaster"
-             Title="Master">
+             x:Class="Flusher.Forms.Views.MenuPage"
+             Title="Main">
     <Grid>
         <ListView x:Name="MenuItemsListView"
                   ItemsSource="{Binding MenuItems}"

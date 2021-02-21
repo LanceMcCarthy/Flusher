@@ -29,13 +29,11 @@ namespace Flusher.Forms.Uwp
                 Xamarin.Forms.Forms.SetFlags("Shell_UWP_Experimental");
                 Xamarin.Forms.Forms.Init(e, new List<Assembly>
                 {
-                    typeof(Telerik.XamarinForms.ConversationalUI.RadChat).GetTypeInfo().Assembly,
-                    typeof(Telerik.XamarinForms.ConversationalUIRenderer.UWP.ChatListViewRenderer).GetTypeInfo().Assembly,
-                    typeof(Telerik.XamarinForms.ConversationalUIRenderer.UWP.CardActionViewRenderer).GetTypeInfo().Assembly,
                     typeof(Telerik.XamarinForms.Input.RadButton).GetTypeInfo().Assembly,
                     typeof(Telerik.XamarinForms.InputRenderer.UWP.ButtonRenderer).GetTypeInfo().Assembly,
                     typeof(Telerik.XamarinForms.Primitives.RadBorder).GetTypeInfo().Assembly,
-                    typeof(Telerik.XamarinForms.PrimitivesRenderer.UWP.BorderRenderer).GetTypeInfo().Assembly,
+                    typeof(Telerik.XamarinForms.Primitives.RadBusyIndicator).GetTypeInfo().Assembly,
+                    typeof(Telerik.XamarinForms.PrimitivesRenderer.UWP.BorderRenderer).GetTypeInfo().Assembly
                 });
 
                 if (e.PreviousExecutionState == ApplicationExecutionState.Terminated)

@@ -4,6 +4,7 @@ using CommonHelpers.Common;
 using Flusher.Common.Helpers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,7 +13,8 @@ namespace Flusher.Common.Services
 {
     public class AzureStorageService : BindableBase
     {
-        private readonly BlobContainerClient container;
+        private readonly BlobServiceClient service;
+        private BlobContainerClient container;
         private bool isInitialized;
 
         /// <summary>
@@ -20,7 +22,7 @@ namespace Flusher.Common.Services
         /// </summary>
         public AzureStorageService()
         {
-            container = new BlobContainerClient(Secrets.BlobConnectionString, Secrets.BlobContainerName);
+            service = new BlobServiceClient(Secrets.BlobConnectionString);
         }
 
         /// <summary>
@@ -45,12 +47,15 @@ namespace Flusher.Common.Services
         {
             try
             {
+                container = service.GetBlobContainerClient(Secrets.BlobContainerName);
                 await container.CreateIfNotExistsAsync();
+
                 IsInitialized = true;
             }
-            catch
+            catch(Exception ex)
             {
                 IsInitialized = false;
+                Trace.WriteLine($"AzureStorageService InitializeAsync: {ex}");
                 throw;
             }
         }
@@ -70,7 +75,7 @@ namespace Flusher.Common.Services
 
             await blob.UploadAsync(filePath);
 
-            await CleanupOldImagesAsync().ConfigureAwait(false);
+            await CleanContainerAsync().ConfigureAwait(false);
 
             return blob.Uri;
         }
@@ -92,7 +97,7 @@ namespace Flusher.Common.Services
 
                 await blob.UploadAsync(memStream);
 
-                await CleanupOldImagesAsync().ConfigureAwait(false);
+                await CleanContainerAsync().ConfigureAwait(false);
 
                 return blob.Uri;
             }
@@ -113,15 +118,15 @@ namespace Flusher.Common.Services
 
             await blob.UploadAsync(imageStream);
 
-            await CleanupOldImagesAsync().ConfigureAwait(false);
+            await CleanContainerAsync().ConfigureAwait(false);
 
             return blob.Uri;
         }
 
         /// <summary>
-        /// Deletes blobs (image files) from the blob container (directory) that are older than a specified time span (The default is 7 days).
+        /// Deletes blobs (image files) from the blob container (directory) that are older than a specified time span (The default is 30 days).
         /// </summary>
-        public async Task CleanupOldImagesAsync()
+        public async Task CleanContainerAsync()
         {
             if (!IsInitialized)
                 return;
@@ -129,9 +134,8 @@ namespace Flusher.Common.Services
             try
             {
                 var blobsToDelete = new List<BlobItem>();
-                var blobs = container.GetBlobs();
 
-                foreach (var blob in blobs)
+                await foreach (BlobItem blob in container.GetBlobsAsync())
                 {
                     if (DateTime.Now - blob.Properties.LastModified > ImageFileLifeSpan)
                     {
@@ -146,13 +150,13 @@ namespace Flusher.Common.Services
                         await container.DeleteBlobIfExistsAsync(outdatedBlob.Name, DeleteSnapshotsOption.IncludeSnapshots);
                     }
 
-                    Console.WriteLine($"Cleaned Up {blobsToDelete.Count} old files.");
+                    Console.WriteLine($"AzureStorageService - Deleted {blobsToDelete.Count} expired blobs.");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
-                throw;
+                Trace.WriteLine(ex);
+                Trace.WriteLine($"AzureStorageService CleanContainerAsync: {ex}");
             }
         }
     }

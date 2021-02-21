@@ -71,7 +71,7 @@ namespace Flusher.Uwp.ViewModels
         public MainPageViewModel()
         {
             AnalyzeCommand = new DelegateCommand(async () => await AnalyzeAsync());
-            FlushRequestCommand = new DelegateCommand(() => FlusherService_FlushRequested(Requester));
+            FlushRequestCommand = new DelegateCommand(async () => await FlushAsync(this.Requester));
         }
 
         #region Properties
@@ -343,34 +343,15 @@ namespace Flusher.Uwp.ViewModels
             try
             {
                 IsBusy = true;
-                SetLedColor(LedColor.Blue);
 
-                var message = $"Flush requested by {requester}.";
-                Log(message);
-                await flusherService.SendMessageAsync(message);
+                await flusherService.SendMessageAsync($"Flush requested by {requester}.");
 
-                DutyCyclePercentage = this.MaxDutyCyclePercent;
+                await FlushAsync(requester);
 
-                message = "Flush started, waiting 8 seconds...";
-                Log(message);
-                await flusherService.SendMessageAsync(message);
-                await Task.Delay(4000);
-                await flusherService.SendMessageAsync("4 seconds remaining...");
-                await Task.Delay(4000);
-
-                DutyCyclePercentage = this.MinDutyCyclePercent;
-
-                message = "Flush complete.";
-                Log(message);
-                await flusherService.SendMessageAsync(message);
-
-                SetLedColor(LedColor.Green);
-                IsBusy = false;
-                IsBusyMessage = "";
+                await flusherService.SendMessageAsync("Flush complete");
             }
             catch (Exception ex)
             {
-                SetLedColor(LedColor.Red);
                 Log($"[Error] in FlusherService_FlushRequested: {ex.Message}");
             }
             finally
@@ -480,35 +461,27 @@ namespace Flusher.Uwp.ViewModels
 
         private async void ButtonGpioPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
-            if (IsBusy || args.Edge != GpioPinEdge.FallingEdge)
-                return;
-
-            try
+            await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
             {
-                Log($"Flush requested (via button), in progress...");
+                try
+                {
+                    if (IsBusy || args.Edge != GpioPinEdge.FallingEdge)
+                        return;
 
-                IsBusy = true;
-                SetLedColor(LedColor.Blue);
+                    IsBusy = true;
 
-                DutyCyclePercentage = this.MaxDutyCyclePercent;
-
-                Log("Flush started, waiting 8 seconds...");
-                await Task.Delay(8000);
-
-                DutyCyclePercentage = this.MinDutyCyclePercent;
-
-                Log("Flush complete.");
-                SetLedColor(LedColor.Green);
-            }
-            catch (Exception ex)
-            {
-                Log($"[Error] in ButtonGpioPinValueChanged: {ex.Message}");
-            }
-            finally
-            {
-                IsBusy = false;
-                IsBusyMessage = "";
-            }
+                    await FlushAsync("Button");
+                }
+                catch (Exception ex)
+                {
+                    Log($"[Error] in ButtonGpioPinValueChanged: {ex.Message}");
+                }
+                finally
+                {
+                    IsBusy = false;
+                    IsBusyMessage = "";
+                }
+            });
         }
 
         #endregion
@@ -779,6 +752,39 @@ namespace Flusher.Uwp.ViewModels
         #region Utilities
 
         /// <summary>
+        /// Common utility that invokes the servo movement to physically flush the toilet.
+        /// </summary>
+        /// <param name="requester">The name of the device or service requesting the flush.</param>
+        /// <param name="duration">Length of time (in milliseconds) to hold the servo in the open position.</param>
+        /// <returns></returns>
+        private async Task FlushAsync(string requester, int duration = 8000)
+        {
+            try
+            {
+                Log($"Flush requested by {requester}, in progress...");
+
+                SetLedColor(LedColor.Blue);
+
+                DutyCyclePercentage = this.MaxDutyCyclePercent;
+
+                Log($"Flush started, waiting {duration / 1000} seconds...");
+
+                await Task.Delay(duration);
+
+                DutyCyclePercentage = this.MinDutyCyclePercent;
+
+                Log("Flush complete.");
+
+                SetLedColor(LedColor.Green);
+            }
+            catch (Exception ex)
+            {
+                Log($"[Error] in FlushAsync: {ex.Message}");
+                throw ex;
+            }
+        }
+
+        /// <summary>
         /// Sends email to users upon successful detection and flush.
         /// </summary>
         /// <param name="imageUrl">Url to the image</param>
@@ -897,6 +903,11 @@ namespace Flusher.Uwp.ViewModels
                     {
                         IsBusyMessage = message;
                     }
+
+                    if (message.Contains("[Error]"))
+                    {
+                        SetLedColor(LedColor.Red);
+                    }
                 }
                 else
                 {
@@ -908,6 +919,11 @@ namespace Flusher.Uwp.ViewModels
                         if (IsBusy && showToUser)
                         {
                             IsBusyMessage = message;
+                        }
+
+                        if (message.Contains("[Error]"))
+                        {
+                            SetLedColor(LedColor.Red);
                         }
                     });
                 }
