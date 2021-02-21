@@ -461,24 +461,27 @@ namespace Flusher.Uwp.ViewModels
 
         private async void ButtonGpioPinValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
-            if (IsBusy || args.Edge != GpioPinEdge.FallingEdge)
-                return;
+            await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
+            {
+                try
+                {
+                    if (IsBusy || args.Edge != GpioPinEdge.FallingEdge)
+                        return;
 
-            try
-            {
-                IsBusy = true;
+                    IsBusy = true;
 
-                await FlushAsync("Button");
-            }
-            catch (Exception ex)
-            {
-                Log($"[Error] in ButtonGpioPinValueChanged: {ex.Message}");
-            }
-            finally
-            {
-                IsBusy = false;
-                IsBusyMessage = "";
-            }
+                    await FlushAsync("Button");
+                }
+                catch (Exception ex)
+                {
+                    Log($"[Error] in ButtonGpioPinValueChanged: {ex.Message}");
+                }
+                finally
+                {
+                    IsBusy = false;
+                    IsBusyMessage = "";
+                }
+            });
         }
 
         #endregion
