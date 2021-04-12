@@ -70,22 +70,22 @@
       <Version>2.80.2</Version>
     </PackageReference>
     <PackageReference Include="Telerik.UI.for.Xamarin.Input">
-      <Version>2021.1.119.1</Version>
+      <Version>2021.1.325.1</Version>
     </PackageReference>
     <PackageReference Include="Xamarin.Google.Android.Material">
-      <Version>1.3.0</Version>
+      <Version>1.3.0.1</Version>
     </PackageReference>
     <PackageReference Include="Xamarin.AndroidX.Legacy.Support.V4">
-      <Version>1.0.0.6</Version>
+      <Version>1.0.0.7</Version>
     </PackageReference>
     <PackageReference Include="Xamarin.AndroidX.AppCompat">
-      <Version>1.2.0.6</Version>
+      <Version>1.2.0.7</Version>
     </PackageReference>
     <PackageReference Include="Xamarin.AndroidX.CardView">
-      <Version>1.0.0.6</Version>
+      <Version>1.0.0.8</Version>
     </PackageReference>
     <PackageReference Include="Xamarin.AndroidX.MediaRouter">
-      <Version>1.2.2</Version>
+      <Version>1.2.2.1</Version>
     </PackageReference>
     <PackageReference Include="Xamarin.AndroidX.MediaRouter" Version="1.1.0.1" />
     <PackageReference Include="Xamarin.Forms" Version="5.0.0.2012" />
