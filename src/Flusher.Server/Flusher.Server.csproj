@@ -10,7 +10,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Telerik.UI.for.AspNet.Core" Version="2021.1.330" />
+    <PackageReference Include="Telerik.UI.for.AspNet.Core" Version="2021.3.914" />
   </ItemGroup>
 
   <ItemGroup>
