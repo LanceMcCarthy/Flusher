@@ -1,8 +1,10 @@
 # The Flusher
 
-Introducing The Flusher, a Windows IoT on Raspberry Pi, SignalR and XamarinForms project that uses AI to automatically flush a human toilet for my cat while I'm on vacation :)
+Introducing **The Flusher**, a Windows IoT app running on Raspberry Pi, SignalR and Xamarin.Forms project that uses AI to automatically flush a human toilet for my cat while I'm on vacation :)
 
-![manual flush](/images/manual_flush.gif)
+![manual flush](./images/manual_flush.gif)
+
+> For how I did this and more details, read my blog post [Using Windows IoT, SignalR, Azure Custom Vision and Xamarin Forms to Flush a Toilet](https://dvlup.com/2020/02/13/using-windows-iot-signalr-azure-custom-vision-and-xamarin-forms-to-flush-a-toilet/).
 
 ## Parts and Services
 
@@ -17,18 +19,28 @@ Introducing The Flusher, a Windows IoT on Raspberry Pi, SignalR and XamarinForms
   - Custom trained with at least 4 iterations and 8 hours of training time
   - Accessed via API
   - Offline inferencing capability via ONYX on Windows Machine Learning
-- [Azure Storage API](https://docs.microsoft.com/en-us/rest/api/storageservices/blob-service-rest-api) (uses blob containers)
-- [ASP.NET Core 3.1 (MVC and SignalR)](https://docs.microsoft.com/en-us/aspnet/core/signalr/introduction?view=aspnetcore-3.1)
-- [Xamarin.Forms](https://docs.microsoft.com/en-us/xamarin/xamarin-forms/) for Android, iOS and PC desktop admin applications
+- [Azure Storage API](https://docs.microsoft.com/en-us/rest/api/storageservices/blob-service-rest-api?Wt.mc_ic=dx_MVP5000553) (uses blob containers)
+- [ASP.NET Core 5.0 (MVC and SignalR)](https://docs.microsoft.com/en-us/aspnet/core/signalr/introduction?Wt.mc_ic=dx_MVP5000553&view=aspnetcore-5.0)
+- [Xamarin.Forms](https://docs.microsoft.com/en-us/xamarin/xamarin-forms/?&Wt.mc_ic=dx_MVP5000553) for Android, iOS and PC desktop admin applications
 
 ## Operation Details
 
-The IoT client (a UWP app running on the Raspberry Pi) will take a photo of the toilet bowl and upload it to Azure blob. Once uploaded to the blob, the photo's URL is passed to Azure Custom Vision.  I have trained the AI to detect and locate the position of any substance in the bowl, it will return the results of the analysis to the IoT client. 
+The IoT client (a UWP app running on the Raspberry Pi) will take a photo of the toilet bowl and upload it to Azure blob. Once uploaded to the blob, the photo's URL is passed to Azure Custom Vision. I have trained the AI to detect and locate the position of any substance in the bowl, it will return the results of the analysis to the IoT client. 
 
 If the detection is 85% or higher probability that there is an undesirable substance, the servo angle will be changed from 0 degrees to 100 degrees for a duration of 5 seconds. This opens the toilet valve and flushes the toilet.
+
+![manual flush](./images/detection_results.png)
 
 At all times, the IoT client is communicating information in real-time to all admin applications using SignalR.
 
 ## Admin Applications
 
 The native admin apps have been compiled for Android, iOS and PC (UWP Desktop). There is also a web portal on the same SignalR server using MVC. The admin can manually take a photo or request an analysis at any time.
+
+### Mobile App
+
+![android](./images/android_app.jpg)
+
+### Web app
+
+![web](./images/web_app.png)
