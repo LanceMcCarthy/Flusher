@@ -72,7 +72,7 @@
     <PackageReference Include="Telerik.UI.for.Xamarin.Input">
       <Version>2021.3.915.1</Version>
     </PackageReference>
-    <PackageReference Include="Xamarin.Forms" Version="5.0.0.2125" />
+    <PackageReference Include="Xamarin.Forms" Version="5.0.0.2196" />
     <PackageReference Include="Xamarin.Essentials" Version="1.7.0" />
   </ItemGroup>
   <ItemGroup>
