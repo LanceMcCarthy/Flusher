@@ -22,6 +22,11 @@ namespace Flusher.Common.Services
         /// </summary>
         public AzureStorageService()
         {
+            if (string.IsNullOrEmpty(Secrets.BlobConnectionString))
+            {
+                throw new Exception("MISSING SECRETS - the Flusher.Common/Helpers/Secrets.cs class is missing values for your services");
+            }
+
             service = new BlobServiceClient(Secrets.BlobConnectionString);
         }
 

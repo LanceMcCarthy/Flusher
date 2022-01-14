@@ -30,6 +30,11 @@ namespace Flusher.Common.Services
 
         public FlusherService(string serverUrl)
         {
+            if (string.IsNullOrEmpty(serverUrl))
+            {
+                throw new Exception("MISSING SERVER URL - This class needs a path to an ASP.NET application running the flusher service");
+            }
+
             connection = new HubConnectionBuilder().WithUrl(serverUrl).Build();
             connection.Closed += Connection_Closed;
             connection.Reconnecting += Connection_Reconnecting;
