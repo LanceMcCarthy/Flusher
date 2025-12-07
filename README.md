@@ -4,7 +4,7 @@ Introducing **The Flusher**, a Windows IoT app running on Raspberry Pi, SignalR 
 
 ![manual flush](./images/manual_flush.gif)
 
-> For how I did this and more details, read my blog post [Using Windows IoT, SignalR, Azure Custom Vision and Xamarin Forms to Flush a Toilet](https://dvlup.com/2020/02/13/using-windows-iot-signalr-azure-custom-vision-and-xamarin-forms-to-flush-a-toilet/).
+> For how I did this and more details, read my blog post [Using Windows IoT, SignalR, Azure Custom Vision and Xamarin Forms to Flush a Toilet](https://dvlup.com/blog/2020.02.13-using-windows-iot-signalr-azure-custom-vision-and-xamarin-forms-to-flush-a-toilet/).
 
 ## Parts and Services
 
